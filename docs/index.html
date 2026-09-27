@@ -1,0 +1,1567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fall Trip">
+<meta property="og:title" content="Fall Trip">
+<meta property="og:description" content="Nine stops. Two days. Come find me at the end of the trail.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%F0%9F%8D%81%3C/text%3E%3C/svg%3E">
+<title>Fall Trip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+  :root {
+    --ink: #0d0f1e;
+    --cream: #e9dfc6;
+    --cream-shade: #a8987a;
+    --blue: #2f8ff0;
+    --blue-light: #a6d8ff;
+    --pink: #f2a0b4;
+    --gold: #f0c060;
+    --text: #f4efe2;
+    --muted: #9aa0b8;
+    /* the current stop's accent, repainted by JS on every level */
+    --accent: #f0c060;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'VT323', 'Courier New', monospace;
+    font-size: 22px;
+    line-height: 1.25;
+    margin: 0;
+    padding-block: 12px;
+    padding-inline: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    image-rendering: pixelated;
+  }
+  .display {
+    font-family: 'Press Start 2P', 'VT323', monospace;
+    letter-spacing: 0.02em;
+    text-wrap: balance;
+  }
+  #shell {
+    position: relative;
+    background: #1f1a24;
+    border: 4px solid var(--cream-shade);
+    box-shadow: 0 0 0 4px var(--ink), 0 0 0 6px var(--cream-shade);
+    line-height: 0;
+    max-width: 100%;
+    transition: border-color .4s;
+  }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #game { touch-action: none; }
+
+  /* on-screen d-pad */
+  #pad {
+    display: grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 56px);
+    gap: 4px;
+    margin-top: 6px;
+  }
+  #pad button {
+    appearance: none;
+    border: 0;
+    background: var(--cream);
+    color: #1f1a24;
+    box-shadow: inset -4px -4px 0 var(--cream-shade), inset 4px 4px 0 #fff8e8;
+    font: inherit;
+    font-size: 26px;
+    cursor: pointer;
+    touch-action: none;
+    padding: 0;
+  }
+  #pad button:active, #pad button.held {
+    background: var(--accent);
+    color: #1f1a24;
+    box-shadow: inset 4px 4px 0 rgba(0,0,0,.35), inset -4px -4px 0 rgba(255,255,255,.45);
+  }
+  #pad button:focus-visible { outline: 3px solid var(--blue-light); outline-offset: 2px; }
+  #pad .up    { grid-area: 1 / 2; }
+  #pad .left  { grid-area: 2 / 1; }
+  #pad .right { grid-area: 2 / 3; }
+  #pad .down  { grid-area: 3 / 2; }
+  #pad .center { grid-area: 2 / 2; background: var(--cream-shade); box-shadow: none; pointer-events: none; }
+  #pad[hidden] { display: none; }
+
+  #hint { color: var(--muted); font-size: 20px; margin: 0; text-align: center; min-height: 26px; }
+  #hint button {
+    appearance: none; border: 0; background: none; padding: 0 4px;
+    font: inherit; color: var(--muted); text-decoration: underline; cursor: pointer;
+  }
+  #hint button:hover { color: var(--text); }
+
+  /* ---- overlays ---------------------------------------------------------- */
+  .overlay {
+    position: absolute; inset: 0;
+    background: var(--ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px;
+    text-align: center;
+    line-height: 1.2;
+    padding: 14px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay > :not(.heart) { position: relative; z-index: 1; }
+  .overlay p { margin: 0; font-size: 21px; color: var(--text); max-width: 24ch; }
+  .overlay button {
+    margin-top: 4px;
+    font-family: 'Press Start 2P', monospace; font-size: 10px;
+    background: var(--accent); color: #1f1a24; border: 0;
+    padding: 10px 14px;
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,.35), inset 3px 3px 0 rgba(255,255,255,.45);
+    cursor: pointer;
+  }
+  .overlay button:active { transform: translate(1px,1px); }
+  .overlay button.ghost {
+    background: none; color: var(--muted); box-shadow: none;
+    font-size: 9px; padding: 6px 8px; text-decoration: underline;
+  }
+  .overlay button.ghost:hover { color: var(--text); }
+
+  /* ---- the postcard that opens each stop --------------------------------- */
+  #card {
+    background: #f2e9d2;
+    color: #2a2418;
+    justify-content: flex-start;
+    align-items: stretch;
+    text-align: left;
+    padding: 0;
+    /* paper: faint ruled tooth, so it reads as card stock not a flat panel */
+    background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.035) 0 1px, transparent 1px 4px);
+  }
+  #card .band {
+    background: var(--accent);
+    color: #2a2418;
+    padding: 7px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    border-bottom: 3px solid rgba(0,0,0,.28);
+    flex: none;
+  }
+  #card .body {
+    flex: 1 1 auto;
+    padding: 12px 14px 8px;
+    display: flex; flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  #card .top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex: none;
+  }
+  #card .meta { min-width: 0; }
+  #card .stamp {
+    width: 56px; height: 56px;
+    background: #fff8e8;
+    border: 3px dashed var(--cream-shade);
+    box-sizing: border-box;
+    image-rendering: pixelated;
+    flex: none;
+  }
+  #card .when {
+    font-family: 'Press Start 2P', monospace; font-size: 10px;
+    color: #8a6a34; margin: 0 0 6px;
+  }
+  #card h2 {
+    font-family: 'Press Start 2P', monospace; font-size: 12px;
+    margin: 0; line-height: 1.45; color: #2a2418;
+    text-wrap: balance;
+  }
+  #card .note {
+    /* auto top and bottom: the slack splits evenly so short notes sit centred
+       on the card instead of stranding all the blank paper underneath */
+    font-size: 23px; line-height: 1.32; color: #4a4030; margin: auto 0;
+    max-width: none;
+  }
+  /* nine squares: where this stop sits in the trip */
+  #card .dots { display: flex; gap: 5px; justify-content: center; margin: 12px 0 10px; flex: none; }
+  #card .dots span { width: 9px; height: 9px; background: #d8cdb0; }
+  #card .dots span.done { background: #8a6a34; }
+  #card .dots span.now { background: var(--accent); outline: 2px solid #2a2418; outline-offset: 1px; }
+  #card .go {
+    margin: 0; align-self: center;
+    background: #2a2418; color: #f2e9d2;
+    box-shadow: inset -3px -3px 0 rgba(0,0,0,.4), inset 3px 3px 0 rgba(255,255,255,.18);
+  }
+
+  /* ---- win / itinerary --------------------------------------------------- */
+  #win h1 { font-size: 14px; margin: 0; color: var(--gold); text-shadow: 3px 3px 0 #8a6a34; }
+  #win img {
+    height: 150px; max-height: 38%; width: auto; aspect-ratio: 2 / 3;
+    border: 3px solid var(--cream);
+    box-shadow: 4px 4px 0 var(--cream-shade);
+    image-rendering: pixelated;
+    animation: rise .8s steps(6) both;
+  }
+  #win .love { color: var(--pink); font-size: 26px; }
+  #win .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+
+  #trip { background: #f2e9d2; color: #2a2418; justify-content: flex-start; align-items: stretch; text-align: left; padding: 0; }
+  #trip .band {
+    background: var(--gold); color: #2a2418; padding: 7px 12px; flex: none;
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    border-bottom: 3px solid rgba(0,0,0,.28);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #trip .scroll { flex: 1 1 auto; overflow-y: auto; padding: 8px 14px; min-height: 0; -webkit-overflow-scrolling: touch; }
+  #trip .day {
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    color: #8a6a34; margin: 8px 0 4px; letter-spacing: .04em;
+  }
+  #trip .day:first-child { margin-top: 0; }
+  #trip ol { list-style: none; margin: 0; padding: 0; }
+  #trip li { display: flex; gap: 8px; font-size: 19px; line-height: 1.25; padding: 1px 0; color: #4a4030; }
+  #trip li b { flex: none; width: 70px; color: #2a2418; font-weight: normal; }
+  #trip .foot { flex: none; padding: 6px 14px 8px; border-top: 3px solid rgba(0,0,0,.18); text-align: center; }
+  #trip .foot button { margin: 0; }
+
+  #lose h1 { font-size: 13px; margin: 0; color: #ff6f91; text-shadow: 3px 3px 0 #7a2238; }
+  #losepic { width: 64px; height: 80px; }
+
+  /* floating hearts on the win screen */
+  .heart {
+    position: absolute; z-index: 0; width: 4px; height: 4px; background: var(--pink);
+    box-shadow:
+      -4px -4px 0 var(--pink), 4px -4px 0 var(--pink),
+      -8px 0 0 var(--pink), -4px 0 0 var(--pink), 4px 0 0 var(--pink), 8px 0 0 var(--pink),
+      -8px 4px 0 var(--pink), -4px 4px 0 var(--pink), 4px 4px 0 var(--pink), 8px 4px 0 var(--pink),
+      -4px 8px 0 var(--pink), 4px 8px 0 var(--pink),
+      0 4px 0 var(--pink), 0 8px 0 var(--pink), 0 12px 0 var(--pink);
+    animation: float linear infinite;
+    pointer-events: none;
+  }
+  @keyframes float { from { transform: translateY(110%); } to { transform: translateY(-40px); } }
+  @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .heart, #win img { animation: none; } }
+</style>
+
+</head>
+<body>
+<div id="shell">
+  <canvas id="game" width="240" height="232" aria-label="Fall Trip: a maze for every stop on the itinerary"></canvas>
+
+  <div id="card" class="overlay" hidden>
+    <div class="band"><span id="cardday">DAY ONE</span><span id="cardnum">STOP 1 / 9</span></div>
+    <div class="body">
+      <div class="top">
+        <div class="meta">
+          <p class="when" id="cardwhen">7:00 AM</p>
+          <h2 id="cardtitle">THE DEPARTURE</h2>
+        </div>
+        <canvas class="stamp" id="cardstamp" width="16" height="16" aria-hidden="true"></canvas>
+      </div>
+      <p class="note" id="cardnote"></p>
+      <div class="dots" id="carddots" aria-hidden="true"></div>
+      <button class="go" type="button" id="cardgo">LET'S GO</button>
+    </div>
+  </div>
+
+  <div id="win" class="overlay" hidden>
+    <h1 class="display">SEE YOU THERE</h1>
+    <img id="winpic" alt="Pixel art of the two of us" src="data:image/png;base64,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">
+    <p class="love">I love you, baby.</p>
+    <div class="row">
+      <button type="button" id="seetrip">THE WHOLE TRIP</button>
+      <button class="ghost again" type="button">play again</button>
+    </div>
+  </div>
+
+  <div id="trip" class="overlay" hidden>
+    <div class="band"><span>THE FALL TRIP</span><span>2 DAYS</span></div>
+    <div class="scroll" id="tripbody"></div>
+    <div class="foot"><button type="button" id="tripback">BACK</button></div>
+  </div>
+
+  <div id="lose" class="overlay" hidden>
+    <canvas id="losepic" width="64" height="80" aria-hidden="true"></canvas>
+    <h1 class="display" id="losetitle">ETHAN CAUGHT YOU</h1>
+    <p id="losenote">He's slow. You're faster. Go again.</p>
+    <button class="again" type="button">TRY THIS STOP AGAIN</button>
+  </div>
+</div>
+
+<div id="pad" aria-label="Direction pad">
+  <button class="up" data-dir="up" aria-label="Up">&#9650;</button>
+  <button class="left" data-dir="left" aria-label="Left">&#9664;</button>
+  <span class="center"></span>
+  <button class="right" data-dir="right" aria-label="Right">&#9654;</button>
+  <button class="down" data-dir="down" aria-label="Down">&#9660;</button>
+</div>
+<p id="hint">Collect everything. Find the door.</p>
+
+<script>
+(() => {
+  const TILE = 16, HUD = 24, COLS = 15, ROWS = 13;
+
+  // ---- the trip -----------------------------------------------------------
+  // One entry per stop. Maps are generated (see genmaze.js) so every pickup and
+  // the door are guaranteed reachable. Theme keys: wa/wb/wc/wd wall tones,
+  // fa/fb floor checker, ac accent.
+  const LEVELS = [
+    {
+      short: 'DEPART', day: 1, when: '7:00 AM', title: 'THE DEPARTURE',
+      note: "Still dark out. Bags in the car, coffee in the cupholder, and the whole weekend sitting in front of us. Go.",
+      item: 'bag', label: 'BAGS',
+      banner: ['GRAB ALL 4 BAGS', 'THE CAR IS WARM'],
+      theme: { wa: '#d3dbf2', wb: '#9aa5cd', wc: '#7b86ad', wd: '#5d6689', fa: '#1b2040', fb: '#161a33', ac: '#7f9ce0' },
+      pattern: 'block',
+      map: [
+        '###############',
+        '#P............#',
+        '#########.###.#',
+        '#....D#3..#...#',
+        '#.....#.###.#.#',
+        '#.....#.#...#.#',
+        '#...#.#.#.#.#.#',
+        '#...#.#.#.#.#.#',
+        '#.#####.#.#.#.#',
+        '#.#...#...#.#.#',
+        '#.#.#.###.#.#.#',
+        '#4..#......1#2#',
+        '###############',
+      ],
+    },
+    {
+      short: 'KAATERSKILL', day: 1, when: '9:45 AM', title: 'KAATERSKILL FALLS',
+      note: "Two waterfalls before lunch. Kaaterskill first, then Plattekill down the road. Wear the boots you always swear you will not need.",
+      item: 'leaf', label: 'LEAVES',
+      banner: ['4 LEAVES', 'MIND THE ROCKS'],
+      theme: { wa: '#c9d2c0', wb: '#8c9884', wc: '#6e7a67', wd: '#54604e', fa: '#20301d', fb: '#1a2418', ac: '#e0663a' },
+      pattern: 'rock',
+      map: [
+        '###############',
+        '#P....#2..#3..#',
+        '###...#.#.#...#',
+        '#.#...#.#.#...#',
+        '#.#.#.#.#.#...#',
+        '#...#...#.....#',
+        '#...###.#####.#',
+        '#.....#.....#.#',
+        '#.....#.#.#.#.#',
+        '#4......#.#.#.#',
+        '#.#####.#.#.#.#',
+        '#..........1#D#',
+        '###############',
+      ],
+    },
+    {
+      short: 'LAST CHANCE', day: 1, when: '11:30 AM', title: 'LAST CHANCE CHEESE',
+      note: "Lunch in Tannersville. A long table, more cheese than two people need, and nowhere else to be for an hour.",
+      item: 'cheese', label: 'CHEESES',
+      banner: ['4 CHEESES', 'TAKE YOUR TIME'],
+      theme: { wa: '#f3e7c6', wb: '#c8b088', wc: '#a48c66', wd: '#7d6848', fa: '#33241a', fb: '#2a1d14', ac: '#f0b040' },
+      pattern: 'brick',
+      map: [
+        '###############',
+        '#P....#4......#',
+        '#.#.#.#.###.#.#',
+        '#.#.#...#...#.#',
+        '#.###.###...#.#',
+        '#.#.....#2..#.#',
+        '#.#.###.###.#.#',
+        '#........3#.#.#',
+        '#####.###.#.#.#',
+        '#1#.....#.#.#.#',
+        '#.#.###.#.#.#.#',
+        '#...........#D#',
+        '###############',
+      ],
+    },
+    {
+      short: 'HUNTER MTN', day: 1, when: '1:00 PM', title: 'HUNTER MOUNTAIN',
+      note: "Ride the lift up. Walk out to the fire tower and climb it anyway. The whole valley is turning gold from up there.",
+      item: 'lift', label: 'LIFT PASSES',
+      banner: ['4 LIFT PASSES', 'ETHAN TOOK THE', 'SAME TRAIL'],
+      chaser: true, chaserSpeed: 2.2,
+      theme: { wa: '#dde3ea', wb: '#9aa4b1', wc: '#7b8694', wd: '#5c6673', fa: '#222833', fb: '#1b2028', ac: '#e07a2a' },
+      pattern: 'rock',
+      map: [
+        '###############',
+        '#P........#..1#',
+        '#.#######.#...#',
+        '#.....#3..#...#',
+        '#...#.#.#.#.#.#',
+        '#...#...#...#.#',
+        '#####...#.###.#',
+        '#...#.........#',
+        '#.#.#.#####.#.#',
+        '#.#2..#...#4#.#',
+        '#.#####.#.#.#.#',
+        '#......D#.....#',
+        '###############',
+      ],
+    },
+    {
+      short: 'PEEKAMOOSE', day: 1, when: '5:00 PM', title: 'PEEKAMOOSE',
+      note: "Dinner. The good kind, where we stay too long and order one more thing that we absolutely do not need.",
+      item: 'plate', label: 'PLATES',
+      banner: ['4 PLATES', 'STAY A WHILE'],
+      theme: { wa: '#eed3ad', wb: '#b98e62', wc: '#946b47', wd: '#6e4e33', fa: '#2e181c', fb: '#241216', ac: '#ff9a52' },
+      pattern: 'brick',
+      map: [
+        '###############',
+        '#P#.......#...#',
+        '#.#.#####.#.#.#',
+        '#...#...#.#.#D#',
+        '#.###.#.#.#.###',
+        '#.....#..2#...#',
+        '#.....#######.#',
+        '#......4......#',
+        '#...#########.#',
+        '#........3....#',
+        '#.#############',
+        '#............1#',
+        '###############',
+      ],
+    },
+    {
+      short: 'BREWERY', day: 1, when: '8:00 PM', title: 'UPWARD / WEST KILL',
+      note: "Upward, or West Kill if we are feeling it. One drink. Cold mountain air. Phones stay in the car.",
+      item: 'beer', label: 'PINTS',
+      banner: ['4 PINTS', 'ETHAN IS AT', 'THE BAR TOO'],
+      chaser: true, chaserSpeed: 2.4,
+      theme: { wa: '#dda06e', wb: '#a06a42', wc: '#7f5232', wd: '#5e3b24', fa: '#1e1828', fb: '#171320', ac: '#f0c060' },
+      pattern: 'brick',
+      map: [
+        '###############',
+        '#P......#....2#',
+        '#...###.#.....#',
+        '#.....#.......#',
+        '#.###.#.#.###.#',
+        '#......4#...#.#',
+        '#.#.#.###...#.#',
+        '#.#.#......1#.#',
+        '#.#.#.#######.#',
+        '#...#...#...#.#',
+        '#.#######.#.#.#',
+        '#..3......#D..#',
+        '###############',
+      ],
+    },
+    {
+      short: "JOSIE'S", day: 2, when: '9:00 AM', title: "JOSIE'S COFFEE",
+      note: "You wake up at 8 with no alarm anywhere near you. Coffee at 9, slowly. Nothing on the schedule but this.",
+      item: 'coffee', label: 'COFFEES',
+      banner: ['4 COFFEES', 'NO RUSH TODAY'],
+      theme: { wa: '#f7ecd4', wb: '#cfbc95', wc: '#ab9877', wd: '#837357', fa: '#2e2738', fb: '#262030', ac: '#4fb0e8' },
+      pattern: 'brick',
+      map: [
+        '###############',
+        '#P#1#........2#',
+        '#.#.#.#.#.#####',
+        '#.#.#.#.#.#4..#',
+        '#.#.#.#.#.#.#.#',
+        '#.#.....#...#.#',
+        '#.#.#####.#.#.#',
+        '#.#.......#...#',
+        '#.#...###.#.#.#',
+        '#.....#...#.#.#',
+        '#.....#.###.#.#',
+        '#....3#......D#',
+        '###############',
+      ],
+    },
+    {
+      short: "GRACIE'S", day: 2, when: '9:30 AM', title: "GRACIE'S",
+      note: "Breakfast. Which, if we are being honest with ourselves, is the real reason we drove all the way up here.",
+      item: 'pancake', label: 'STACKS',
+      banner: ['4 STACKS', 'EAT UP'],
+      theme: { wa: '#e9f2ef', wb: '#a6bcb8', wc: '#85a09b', wd: '#647d79', fa: '#192b2e', fb: '#132224', ac: '#ff6f91' },
+      pattern: 'block',
+      map: [
+        '###############',
+        '#P#1......#...#',
+        '#.#######.#...#',
+        '#.............#',
+        '#####.#.###.#.#',
+        '#.....#.....#.#',
+        '#.###.#.#.###.#',
+        '#3....#4#...#2#',
+        '#.#######.#.#.#',
+        '#.#D......#.#.#',
+        '#.#####.###.#.#',
+        '#.............#',
+        '###############',
+      ],
+    },
+    {
+      short: 'DIAMOND NOTCH', day: 2, when: '11:00 AM', title: 'DIAMOND NOTCH FALLS',
+      note: "One last walk in before we point the car south. Quiet water, gold everywhere. Come find me at the end of the trail.",
+      item: 'goldleaf', label: 'GOLD LEAVES',
+      banner: ['4 GOLD LEAVES', 'ETHAN WANTS ONE', 'LAST TRY'],
+      chaser: true, chaserSpeed: 2.2,
+      finale: true, roomX: 11,
+      theme: { wa: '#d4d9c6', wb: '#98a089', wc: '#79826c', wd: '#5b6452', fa: '#1c2a14', fb: '#16210f', ac: '#f0c060' },
+      pattern: 'rock',
+      map: [
+        '###############',
+        '#1.....3..#####',
+        '#.###.#...#####',
+        '#.....#...#...#',
+        '#.###.#...#...#',
+        '#..4......D..M#',
+        '#.###.#.#.#...#',
+        '#.....#.#.#...#',
+        '#...#.#.#.#...#',
+        '#...#2..#.#...#',
+        '#.#.#...#.#####',
+        '#P#.......#####',
+        '###############',
+      ],
+    },
+  ];
+
+  // ---- pixel art ----------------------------------------------------------
+  const PAL = {
+    H: '#1b1418', S: '#f0c8a6', E: '#2a1e22', M: '#d8788c', W: '#f6f2ea', w: '#d9d2c4',
+    G: '#5c6b45', g: '#46533a', B: '#161616',
+    T: '#23202a', Q: '#c9b48e', q: '#a8946f', N: '#e6e6e6',
+    D: '#7a4a2a', e: '#5a3419', F: '#f0c060', f: '#3a2212',
+    x: '#101010', l: '#cfe8ff', R: '#a83a3a', P: '#4a4a58',
+  };
+  const SHELLY = [[
+    '.....HHHHHH.....',
+    '....HHHHHHHH....',
+    '...HHHHHHHHHH...',
+    '...HHHHHHHHHH...',
+    '...HHSSSSSSHH...',
+    '...HHSESSESHH...',
+    '...HHSSSSSSHH...',
+    '...HHSSMMSSHH...',
+    '...HH.SSSS.HH...',
+    '...HHWWWWWWHH...',
+    '...HWWWWWWWWH...',
+    '...HWSWWWWSWH...',
+    '....WSWWWWSW....',
+    '....SSwwwwSS....',
+    '.....GGGGGG.....',
+    '....GGGGGGGG....',
+    '....GGGGGGGG....',
+    '....GGGggGGG....',
+    '....GGG..GGG....',
+    '....BBB..BBB....',
+  ], [
+    '.....HHHHHH.....',
+    '....HHHHHHHH....',
+    '...HHHHHHHHHH...',
+    '...HHHHHHHHHH...',
+    '...HHSSSSSSHH...',
+    '...HHSESSESHH...',
+    '...HHSSSSSSHH...',
+    '...HHSSMMSSHH...',
+    '...HH.SSSS.HH...',
+    '...HHWWWWWWHH...',
+    '...HWWWWWWWWH...',
+    '...HWSWWWWSWH...',
+    '....WSWWWWSW....',
+    '....SSwwwwSS....',
+    '.....GGGGGG.....',
+    '....GGGGGGGG....',
+    '...GGGGGGGGGG...',
+    '...GGGg..gGGG...',
+    '...GGG....GGG...',
+    '...BBB....BBB...',
+  ]];
+  const SHELLY_HUG = [
+    '.....HHHHHH.....',
+    '....HHHHHHHH....',
+    '...HHHHHHHHHH...',
+    '...HHHHHHHHHH...',
+    '...HHSSSSSSHH...',
+    '...HHSESSESHH...',
+    '...HHSSSSSSHH...',
+    '...HHSSSMMSHH...',
+    '...HH.SSSS.HH...',
+    '...HHWWWWWWHSSS.',
+    '...HWWWWWWWWHSSS',
+    '...HWWWWWWWWWWSS',
+    '....WWWWWWWWWW..',
+    '....wwwwwwww....',
+    '.....GGGGGG.....',
+    '....GGGGGGGG....',
+    '....GGGGGGGG....',
+    '....GGGggGGG....',
+    '....GGG..GGG....',
+    '....BBB..BBB....',
+  ];
+  const HIM = [
+    '.....HHHHHHH....',
+    '....HHHHHHHHH...',
+    '...HHHHHHHHHHH..',
+    '...HHHHHHHHHH...',
+    '....HHSSSSSSH...',
+    '....HSSSSSSSH...',
+    '....HSESSSES....',
+    '....HSSSSSSS....',
+    '.....SSSMMS.....',
+    '......SSSS......',
+    '....TTTTTTTT....',
+    '...TTTTTTTTTT...',
+    '..TTTTTTTTTTTT..',
+    '..STTTTTTTTTTS..',
+    '..SSTTTTTTTTSS..',
+    '.....QQQQQQ.....',
+    '....QQQQQQQQ....',
+    '....QQQQQQQQ....',
+    '....QQQqqQQQ....',
+    '....SSS..SSS....',
+    '....SSS..SSS....',
+    '....BBB..BBB....',
+    '....NNN..NNN....',
+  ];
+  const HIM_HUG = [
+    '.....HHHHHHH....',
+    '....HHHHHHHHH...',
+    '...HHHHHHHHHHH..',
+    '...HHHHHHHHHH...',
+    '....HHSSSSSSH...',
+    '....HSSSSSSSH...',
+    '....HSESSSES....',
+    '....HSSSSSSS....',
+    '.....SMMSSS.....',
+    '......SSSS......',
+    '.SSSTTTTTTTT....',
+    'SSSTTTTTTTTTT...',
+    'SSTTTTTTTTTTTT..',
+    '..TTTTTTTTTTTT..',
+    '....TTTTTTTT....',
+    '.....QQQQQQ.....',
+    '....QQQQQQQQ....',
+    '....QQQQQQQQ....',
+    '....QQQqqQQQ....',
+    '....SSS..SSS....',
+    '....SSS..SSS....',
+    '....BBB..BBB....',
+    '....NNN..NNN....',
+  ];
+  const ETHAN = [[
+    '.....HHHHHH.....',
+    '....HHHHHHHH....',
+    '...HHHHHHHHHH...',
+    '...HHHHHHHHHH...',
+    '...HHSSSSSSHH...',
+    '...HSSSSSSSSH...',
+    '...HxllxxllxH...',
+    '...HSxxSSxxSH...',
+    '....SSSSSSSS....',
+    '.....SSMMSS.....',
+    '......SSSS......',
+    '....RRRRRRRR....',
+    '...RRRRRRRRRR...',
+    '...SRRRRRRRRS...',
+    '...SSRRRRRRSS...',
+    '.....PPPPPP.....',
+    '....PPPPPPPP....',
+    '....PPPPPPPP....',
+    '....PPP..PPP....',
+    '....BBB..BBB....',
+  ], [
+    '.....HHHHHH.....',
+    '....HHHHHHHH....',
+    '...HHHHHHHHHH...',
+    '...HHHHHHHHHH...',
+    '...HHSSSSSSHH...',
+    '...HSSSSSSSSH...',
+    '...HxllxxllxH...',
+    '...HSxxSSxxSH...',
+    '....SSSSSSSS....',
+    '.....SSMMSS.....',
+    '......SSSS......',
+    '....RRRRRRRR....',
+    '...RRRRRRRRRR...',
+    '...SRRRRRRRRS...',
+    '...SSRRRRRRSS...',
+    '.....PPPPPP.....',
+    '....PPPPPPPP....',
+    '...PPPPPPPPPP...',
+    '...PPP....PPP...',
+    '...BBB....BBB...',
+  ]];
+  const DOOR_CLOSED = [
+    'ffffffffffffffff',
+    'fDDDDDDDDDDDDDDf',
+    'fDeeeeeeeeeeeeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDFFDDDDeDf',
+    'fDeDDDDFFDDDDeDf',
+    'fDeDDDDDFDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeDDDDDDDDDDeDf',
+    'fDeeeeeeeeeeeeDf',
+    'fDDDDDDDDDDDDDDf',
+    'ffffffffffffffff',
+  ];
+  const HEART = ['.HH.HH.', 'HHHHHHH', 'HHHHHHH', '.HHHHH.', '..HHH..', '...H...'];
+
+  // The nine pickups, one per stop. Each carries its own palette so the letters
+  // can stay generic: o outline, a/b body, c/d accents, h highlight.
+  const ITEMS = {
+    bag: { pal: { o: '#33281a', a: '#7d8a52', b: '#5c6b45', c: '#d8c9a0' }, rows: [
+      '................',
+      '................',
+      '......oooo......',
+      '.....o....o.....',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..occcccccccco..',
+      '..obbbbbbbbbbo..',
+      '..obbbbbbbbbbo..',
+      '..obbbbbbbbbbo..',
+      '..oooooooooooo..',
+      '................',
+      '................',
+      '................',
+      '................',
+    ] },
+    leaf: { pal: { a: '#d4562e', b: '#f0913a', o: '#6b4426' }, rows: [
+      '................',
+      '.......a........',
+      '......aaa.......',
+      '..a...aaa...a...',
+      '..aa.aaaaa.aa...',
+      '...aaaaaaaaa....',
+      '.aaaaaaaaaaaaa..',
+      '.aabaaaaaaabaa..',
+      '..aaaaaaaaaaa...',
+      '...aaaaaaaaa....',
+      '....aa.a.aa.....',
+      '.......a........',
+      '.......o........',
+      '.......o........',
+      '................',
+      '................',
+    ] },
+    goldleaf: { base: 'leaf', pal: { a: '#e0a326', b: '#f7dc85', o: '#7a5a26' } },
+    cheese: { pal: { a: '#f0c23a', b: '#c49420', o: '#a8761a' }, rows: [
+      '................',
+      '................',
+      '................',
+      '.......oooo.....',
+      '.....ooaaaaoo...',
+      '....oaaaaaaao...',
+      '...oaabbaaaaao..',
+      '..oaaabbaaaaao..',
+      '..oaaaaaabbaao..',
+      '..oabbaaabbaao..',
+      '..oabbaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..ooooooooooo...',
+      '................',
+      '................',
+      '................',
+    ] },
+    lift: { pal: { o: '#3a4250', a: '#d0553a', b: '#bfe4ff' }, rows: [
+      '.......o........',
+      '.......o........',
+      '...oooooooooo...',
+      '.......o........',
+      '.......o........',
+      '....oooooooo....',
+      '...oaaaaaaaao...',
+      '...oabbbbbbao...',
+      '...oabbbbbbao...',
+      '...oabbbbbbao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '....oooooooo....',
+      '................',
+      '................',
+      '................',
+    ] },
+    plate: { pal: { h: '#cbd8e8', c: '#c0562e', a: '#f6f2ea', b: '#cbc3b2' }, rows: [
+      '................',
+      '....h..h..h.....',
+      '.....h..h..h....',
+      '....h..h..h.....',
+      '................',
+      '.....cccccc.....',
+      '....cccccccc....',
+      '...aaaaaaaaaa...',
+      '..aaaaaaaaaaaa..',
+      '..bbbbbbbbbbbb..',
+      '...bbbbbbbbbb...',
+      '....bbbbbbbb....',
+      '................',
+      '................',
+      '................',
+      '................',
+    ] },
+    beer: { pal: { o: '#dfe7ee', h: '#fff8e8', a: '#e09a20' }, rows: [
+      '................',
+      '................',
+      '....oooooooo....',
+      '....ohhhhhho....',
+      '....ohhhhhho....',
+      '....oaaaaaao....',
+      '....oaaaaaaooo..',
+      '....oaaaaaao.o..',
+      '....oaaaaaao.o..',
+      '....oaaaaaaooo..',
+      '....oaaaaaao....',
+      '....oaaaaaao....',
+      '....oaaaaaao....',
+      '....oooooooo....',
+      '................',
+      '................',
+    ] },
+    coffee: { pal: { o: '#4a3a2c', c: '#8a6a4a', a: '#f6f2ea', b: '#b5794a', h: '#cbd8e8' }, rows: [
+      '................',
+      '.....h..h.......',
+      '....h..h..h.....',
+      '.....h..h.......',
+      '................',
+      '...oooooooooo...',
+      '...occcccccco...',
+      '...oooooooooo...',
+      '....oaaaaaao....',
+      '....oabbbbao....',
+      '....oabbbbao....',
+      '.....oaaaao.....',
+      '.....oooooo.....',
+      '................',
+      '................',
+      '................',
+    ] },
+    pancake: { pal: { c: '#f0c060', a: '#d9a463', b: '#b07c40', o: '#e8ecf0' }, rows: [
+      '................',
+      '.......c........',
+      '......ccc.......',
+      '.......c........',
+      '................',
+      '....aaaaaaaa....',
+      '...aaaaaaaaaa...',
+      '...bbbbbbbbbb...',
+      '...aaaaaaaaaa...',
+      '...bbbbbbbbbb...',
+      '...aaaaaaaaaa...',
+      '...bbbbbbbbbb...',
+      '....oooooooo....',
+      '................',
+      '................',
+      '................',
+    ] },
+  };
+
+  function makeSprite(rows, override) {
+    const c = document.createElement('canvas');
+    c.width = rows[0].length; c.height = rows.length;
+    const g = c.getContext('2d');
+    rows.forEach((r, y) => [...r].forEach((ch, x) => {
+      if (ch === '.') return;
+      g.fillStyle = (override && override[ch]) || PAL[ch] || '#ff00ff';
+      g.fillRect(x, y, 1, 1);
+    }));
+    return c;
+  }
+  function dim(rows, pal) {
+    // the "not collected yet" ghost: same shape, drained toward the floor color
+    const out = {};
+    for (const k in pal) out[k] = '#39415a';
+    return makeSprite(rows, out);
+  }
+  const spr = {
+    shelly: SHELLY.map((f) => makeSprite(f)),
+    shellyHug: makeSprite(SHELLY_HUG),
+    him: makeSprite(HIM),
+    himHug: makeSprite(HIM_HUG),
+    ethan: ETHAN.map((f) => makeSprite(f)),
+    door: makeSprite(DOOR_CLOSED),
+    heart: makeSprite(HEART, { H: '#f2a0b4' }),
+    heartBig: makeSprite(HEART, { H: '#ff6f91' }),
+    item: {}, itemDim: {},
+  };
+  for (const key in ITEMS) {
+    const def = ITEMS[key];
+    const rows = def.rows || ITEMS[def.base].rows;
+    spr.item[key] = makeSprite(rows, def.pal);
+    spr.itemDim[key] = dim(rows, def.pal);
+  }
+
+  // ---- audio (tiny chiptune) ---------------------------------------------
+  let ac = null;
+  function beep(freq, dur, t0 = 0, type = 'square', vol = 0.08) {
+    if (!ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, ac.currentTime + t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + t0 + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(ac.currentTime + t0); o.stop(ac.currentTime + t0 + dur + 0.02);
+  }
+  function unlockAudio() {
+    if (ac) return;
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
+  }
+  const sfx = {
+    step: () => beep(220, 0.04, 0, 'square', 0.02),
+    pickup: () => { beep(660, 0.08); beep(880, 0.08, 0.08); beep(1320, 0.16, 0.16); },
+    door: () => { beep(330, 0.1); beep(415, 0.1, 0.1); beep(494, 0.1, 0.2); beep(659, 0.35, 0.3, 'square', 0.06); beep(90, 0.5, 0.3, 'triangle', 0.1); },
+    stop: () => [523, 659, 784].forEach((f, i) => beep(f, 0.16, i * 0.11)),
+    hug: () => { beep(523, 0.6, 0, 'triangle', 0.06); beep(659, 0.6, 0.02, 'triangle', 0.06); beep(784, 0.6, 0.04, 'triangle', 0.06); },
+    win: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => beep(f, i === 6 ? 0.5 : 0.14, i * 0.13)),
+    start: () => { beep(440, 0.08); beep(660, 0.12, 0.09); },
+    caught: () => { [440, 415, 392, 370].forEach((f, i) => beep(f, 0.18, i * 0.16, 'square', 0.07)); beep(110, 0.7, 0.62, 'triangle', 0.1); },
+  };
+
+  // ---- state --------------------------------------------------------------
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const SPEED = 7;          // her tiles per second
+  const SAVE = 'falltrip.progress';
+  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+  const state = {
+    screen: 'title', li: 0, L: LEVELS[0], map: LEVELS[0].map,
+    items: [], got: 0, doorOpen: false, doorAnim: 0,
+    px: 0, py: 0, tx: 0, ty: 0, prog: 1, dir: 'down', frame: 0, t: 0,
+    popups: [], banner: null, cut: null, advancing: false,
+    doorPos: null, himPos: null, roomX: Infinity,
+    hasEthan: false,
+    ethan: { px: 0, py: 0, tx: 0, ty: 0, prog: 1, frame: 0, wait: 0, speed: 2.4 },
+  };
+  const held = new Set();
+  let queued = null, swipeDir = null;
+
+  const loadProgress = () => { try { return Math.min(LEVELS.length, Math.max(0, +localStorage.getItem(SAVE) || 0)); } catch (e) { return 0; } };
+  const saveProgress = (n) => { try { localStorage.setItem(SAVE, String(n)); } catch (e) {} };
+  const clearProgress = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
+
+  const at = (x, y) => (y < 0 || y >= ROWS || x < 0 || x >= COLS) ? '#' : state.map[y][x];
+  const isDoor = (x, y) => at(x, y) === 'D';
+  const wall = (x, y) => { const c = at(x, y); return c === '#' || (c === 'D' && !state.doorOpen); };
+  const inRoom = (x, y) => x >= state.roomX && at(x, y) !== '#';
+  const wallForEthan = (x, y) => wall(x, y) || isDoor(x, y) || inRoom(x, y);
+
+  function bfsFrom(sx, sy, blocked = wall) {
+    const d = Array.from({ length: ROWS }, () => Array(COLS).fill(-1));
+    d[sy][sx] = 0;
+    const q = [[sx, sy]];
+    for (let i = 0; i < q.length; i++) {
+      const [x, y] = q[i];
+      for (const k in DIRS) {
+        const nx = x + DIRS[k][0], ny = y + DIRS[k][1];
+        if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) continue;
+        if (blocked(nx, ny) || d[ny][nx] !== -1) continue;
+        d[ny][nx] = d[y][x] + 1; q.push([nx, ny]);
+      }
+    }
+    return d;
+  }
+  function findPath(from, to, blocked = wall) {
+    const key = (x, y) => y * COLS + x;
+    const prev = new Map([[key(from.x, from.y), null]]);
+    const q = [from];
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i];
+      if (c.x === to.x && c.y === to.y) break;
+      for (const k in DIRS) {
+        const n = { x: c.x + DIRS[k][0], y: c.y + DIRS[k][1] };
+        if (n.x < 0 || n.y < 0 || n.x >= COLS || n.y >= ROWS) continue;
+        if (blocked(n.x, n.y) || prev.has(key(n.x, n.y))) continue;
+        prev.set(key(n.x, n.y), c); q.push(n);
+      }
+    }
+    if (!prev.has(key(to.x, to.y))) return [];
+    const path = [];
+    for (let c = to; c && !(c.x === from.x && c.y === from.y); c = prev.get(key(c.x, c.y))) path.unshift(c);
+    return path;
+  }
+
+  // Ethan starts as far from her as the level allows, never on the door, a
+  // pickup, or inside the room he is not allowed into.
+  function pickEthanStart() {
+    const d = bfsFrom(state.tx, state.ty);
+    let best = { x: state.tx, y: state.ty }, bd = -1;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      if (wall(x, y) || isDoor(x, y) || inRoom(x, y)) continue;
+      if (state.items.some((b) => b.x === x && b.y === y)) continue;
+      if (d[y][x] > bd) { bd = d[y][x]; best = { x, y }; }
+    }
+    return best;
+  }
+
+  function loadLevel(i) {
+    const L = LEVELS[i];
+    state.li = i; state.L = L; state.map = L.map;
+    state.items = []; state.got = 0;
+    state.doorOpen = false; state.doorAnim = 0; state.banner = null; state.cut = null;
+    state.popups = []; state.prog = 1; state.dir = 'down'; state.frame = 0;
+    state.advancing = false;
+    state.doorPos = null; state.himPos = null;
+    state.roomX = L.finale ? L.roomX : Infinity;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const ch = L.map[y][x];
+      if (ch === 'P') { state.px = state.tx = x; state.py = state.ty = y; }
+      else if ('1234'.includes(ch)) state.items.push({ x, y, n: +ch, taken: false });
+      else if (ch === 'D') state.doorPos = { x, y };
+      else if (ch === 'M') state.himPos = { x, y };
+    }
+    state.items.sort((a, b) => a.n - b.n);
+    state.hasEthan = !!L.chaser;
+    const e = state.ethan;
+    if (state.hasEthan) {
+      const s = pickEthanStart();
+      e.px = e.tx = s.x; e.py = e.ty = s.y; e.prog = 1; e.frame = 0;
+      e.wait = 2.5; e.speed = L.chaserSpeed || 2.4;
+    }
+    held.clear(); queued = null; swipeDir = null;
+    document.documentElement.style.setProperty('--accent', L.theme.ac);
+    document.getElementById('shell').style.borderColor = L.theme.wb;
+  }
+
+  // ---- screens ------------------------------------------------------------
+  const el = (id) => document.getElementById(id);
+  const hideAll = () => ['card', 'win', 'trip', 'lose'].forEach((k) => { el(k).hidden = true; });
+
+  function setHint() {
+    const h = el('hint');
+    if (state.screen === 'title') {
+      const p = loadProgress();
+      h.innerHTML = p > 0 && p < LEVELS.length
+        ? 'Picking up at stop ' + (p + 1) + ' of ' + LEVELS.length + '.'
+        : 'Nine stops. Two days. Arrow keys, swipe, or the pad.';
+      if (p > 0) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = 'start over';
+        b.addEventListener('click', () => { clearProgress(); setHint(); });
+        h.append(' ', b);
+      }
+      return;
+    }
+    const L = state.L;
+    h.textContent = 'Grab all 4 ' + L.label.toLowerCase() + '. Find the door.' + (L.chaser ? " Don't let Ethan catch you." : '');
+  }
+
+  function showCard(i) {
+    const L = LEVELS[i];
+    state.li = i; state.screen = 'card';
+    document.documentElement.style.setProperty('--accent', L.theme.ac);
+    el('cardday').textContent = L.day === 1 ? 'DAY ONE' : 'DAY TWO';
+    el('cardnum').textContent = 'STOP ' + (i + 1) + ' / ' + LEVELS.length;
+    el('cardwhen').textContent = L.when;
+    el('cardtitle').textContent = L.title;
+    el('cardnote').textContent = L.note;
+    const dots = el('carddots');
+    dots.innerHTML = '';
+    for (let k = 0; k < LEVELS.length; k++) {
+      const s = document.createElement('span');
+      if (k < i) s.className = 'done'; else if (k === i) s.className = 'now';
+      dots.appendChild(s);
+    }
+    const st = el('cardstamp'), g = st.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, 16, 16);
+    g.drawImage(spr.item[L.item], 0, 0);
+    hideAll();
+    el('card').hidden = false;
+    el('cardgo').focus({ preventScroll: true });
+  }
+
+  function beginLevel(i) {
+    unlockAudio();
+    hideAll();
+    loadLevel(i);
+    state.screen = 'play';
+    setHint();
+    state.banner = { lines: LEVELS[i].banner, t: 0, dur: 4 };
+    sfx.start();
+  }
+
+  function startTitle() {
+    state.screen = 'title';
+    state.L = LEVELS[0];
+    hideAll();
+    document.documentElement.style.setProperty('--accent', '#f0c060');
+    document.getElementById('shell').style.borderColor = 'var(--cream-shade)';
+    setHint();
+  }
+
+  function openDoor() {
+    state.doorOpen = true;
+    state.banner = { lines: state.L.finale ? ['THE TRAIL OPENS'] : ['THE DOOR OPENS'], t: 0, dur: 2.6 };
+    sfx.door();
+  }
+
+  function completeLevel() {
+    if (state.advancing) return;
+    state.advancing = true;
+    state.screen = 'done';
+    saveProgress(state.li + 1);
+    sfx.stop();
+    setTimeout(() => showCard(state.li + 1), 850);
+  }
+
+  function caught() {
+    state.screen = 'lose';
+    held.clear(); queued = null; swipeDir = null;
+    sfx.caught();
+    setTimeout(() => { el('lose').hidden = false; }, 700);
+  }
+
+  // ---- the finale: she walks to him, they hug, then the trip --------------
+  function beginCutscene() {
+    state.screen = 'cutscene';
+    held.clear(); queued = null; swipeDir = null;
+    const target = { x: state.himPos.x - 1, y: state.himPos.y };
+    state.cut = { path: findPath({ x: state.tx, y: state.ty }, target), phase: 'walk', t: 0, hugT: 0 };
+  }
+  function updateCutscene(dt) {
+    const c = state.cut;
+    c.t += dt;
+    if (c.phase === 'walk') {
+      stepWalk(dt);
+      if (state.prog >= 1) {
+        if (c.path.length) {
+          const n = c.path.shift();
+          const d = n.x > state.tx ? 'right' : n.x < state.tx ? 'left' : n.y > state.ty ? 'down' : 'up';
+          tryMove(d); state.frame ^= 1; sfx.step();
+        } else { c.phase = 'pause'; c.t = 0; state.dir = 'right'; }
+      }
+    } else if (c.phase === 'pause') {
+      if (c.t > 0.5) { c.phase = 'hug'; c.t = 0; sfx.hug(); }
+    } else if (c.phase === 'hug') {
+      c.hugT = Math.min(1, c.t / 0.5);
+      if (c.t > 0.3 && Math.floor(c.t * 6) !== Math.floor((c.t - dt) * 6) && c.t < 2.4) {
+        state.popups.push({ x: state.himPos.x - 0.5 + (Math.random() - 0.5), y: state.himPos.y - 0.3 - Math.random() * 0.4, t: 0, big: true });
+      }
+      if (c.t > 3.2) win();
+    }
+  }
+  function win() {
+    state.screen = 'win';
+    saveProgress(LEVELS.length);
+    sfx.win();
+    const overlay = el('win');
+    hideAll();
+    overlay.hidden = false;
+    overlay.querySelectorAll('.heart').forEach((h) => h.remove());
+    for (let i = 0; i < 9; i++) {
+      const h = document.createElement('span');
+      h.className = 'heart';
+      h.style.left = (6 + Math.random() * 88) + '%';
+      h.style.animationDuration = (4 + Math.random() * 4) + 's';
+      h.style.animationDelay = (-Math.random() * 6) + 's';
+      h.style.opacity = (0.35 + Math.random() * 0.5).toFixed(2);
+      overlay.appendChild(h);
+    }
+  }
+
+  // ---- movement -----------------------------------------------------------
+  function wantDir() {
+    if (queued) { const d = queued; queued = null; return d; }
+    for (const d of ['up', 'down', 'left', 'right']) if (held.has(d)) return d;
+    return swipeDir;
+  }
+  function tryMove(d) {
+    const [dx, dy] = DIRS[d];
+    state.dir = d;
+    if (wall(state.tx + dx, state.ty + dy)) { if (d === swipeDir) swipeDir = null; return false; }
+    state.px = state.tx; state.py = state.ty;
+    state.tx += dx; state.ty += dy; state.prog = 0;
+    return true;
+  }
+  function stepWalk(dt) {
+    if (state.prog < 1) { state.prog = Math.min(1, state.prog + dt * SPEED); return state.prog === 1; }
+    return false;
+  }
+  function arrive() {
+    const b = state.items.find((b) => !b.taken && b.x === state.tx && b.y === state.ty);
+    if (b) {
+      b.taken = true; state.got++;
+      state.popups.push({ x: b.x, y: b.y, t: 0 });
+      sfx.pickup();
+      if (state.got === state.items.length) setTimeout(openDoor, 450);
+    }
+    if (!state.doorOpen) return;
+    if (state.L.finale) { if (inRoom(state.tx, state.ty)) beginCutscene(); }
+    else if (isDoor(state.tx, state.ty)) completeLevel();
+  }
+  function updateEthan(dt) {
+    const e = state.ethan;
+    if (e.wait > 0) { e.wait -= dt; return; }
+    if (e.prog < 1) e.prog = Math.min(1, e.prog + dt * e.speed);
+    if (e.prog >= 1) {
+      const path = findPath({ x: e.tx, y: e.ty }, { x: state.tx, y: state.ty }, wallForEthan);
+      if (path.length) {
+        const n = path[0];
+        e.px = e.tx; e.py = e.ty; e.tx = n.x; e.ty = n.y; e.prog = 0; e.frame ^= 1;
+      }
+    }
+    const ex = e.px + (e.tx - e.px) * e.prog, ey = e.py + (e.ty - e.py) * e.prog;
+    const sx = state.px + (state.tx - state.px) * state.prog, sy = state.py + (state.ty - state.py) * state.prog;
+    if (Math.hypot(ex - sx, ey - sy) < 0.55) caught();
+  }
+  function updatePlay(dt) {
+    if (stepWalk(dt)) arrive();
+    if (state.screen !== 'play') return;
+    if (state.prog >= 1) {
+      const d = wantDir();
+      if (d && tryMove(d)) { state.frame ^= 1; sfx.step(); }
+    }
+    if (state.hasEthan) updateEthan(dt);
+  }
+  function update(dt) {
+    state.t += dt;
+    if (state.doorOpen && state.doorAnim < 1) state.doorAnim = Math.min(1, state.doorAnim + dt * 1.5);
+    if (state.banner && (state.banner.t += dt) > state.banner.dur) state.banner = null;
+    state.popups = state.popups.filter((p) => (p.t += dt) < 0.7);
+    if (state.screen === 'play') updatePlay(dt);
+    else if (state.screen === 'cutscene') updateCutscene(dt);
+    else if (state.screen === 'done') stepWalk(dt);
+  }
+
+  // ---- render -------------------------------------------------------------
+  // Deterministic per-tile noise, so the rock walls stay put between frames.
+  function hash(x, y) {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function drawWallTile(X, Y, x, y) {
+    const th = state.L.theme;
+    ctx.fillStyle = th.wb; ctx.fillRect(X, Y, TILE, TILE);
+    ctx.fillStyle = th.wa; ctx.fillRect(X, Y, TILE, 2);
+    ctx.fillStyle = th.wc;
+    if (state.L.pattern === 'brick') {
+      ctx.fillRect(X, Y + 7, TILE, 1);
+      const off = (y % 2) ? 3 : 11;
+      ctx.fillRect(X + off, Y + 2, 1, 5);
+      ctx.fillRect(X + ((off + 8) % 16), Y + 8, 1, 6);
+    } else if (state.L.pattern === 'rock') {
+      for (let i = 0; i < 5; i++) {
+        const r = hash(x * 31 + i, y * 17 + i * 7);
+        const rx = 1 + Math.floor(r * 12), ry = 3 + Math.floor((r * 997 % 1) * 10);
+        ctx.fillRect(X + rx, Y + ry, 2, 2);
+      }
+    } else {
+      for (let i = 3; i < TILE; i += 4) ctx.fillRect(X + i, Y + 3, 1, TILE - 5);
+    }
+    ctx.fillStyle = th.wd; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    // walls facing an open tile get a cast shadow so the maze reads as 3d
+    if (at(x, y + 1) !== '#') { ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(X, Y + TILE - 3, TILE, 3); }
+  }
+  function drawFloorTile(X, Y, x, y) {
+    const th = state.L.theme;
+    const light = (x + y) % 2 === 0;
+    ctx.fillStyle = light ? th.fa : th.fb;
+    ctx.fillRect(X, Y, TILE, TILE);
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    ctx.fillRect(X + 1, Y + 1, TILE - 2, TILE - 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(X + 7, Y + 7, 2, 2);
+  }
+  function drawRoomTile(X, Y, x, y) {
+    const lit = state.doorAnim;
+    const light = (x + y) % 2 === 0;
+    ctx.fillStyle = light ? '#3a2a22' : '#33241d';
+    ctx.fillRect(X, Y, TILE, TILE);
+    ctx.fillStyle = '#2b1e18';
+    ctx.fillRect(X, Y + 7, TILE, 1);
+    ctx.fillRect(X + (light ? 4 : 11), Y, 1, TILE);
+    if (lit < 1) { ctx.fillStyle = 'rgba(13,15,30,' + ((1 - lit) * 0.92) + ')'; ctx.fillRect(X, Y, TILE, TILE); }
+  }
+  function drawDoor(X, Y) {
+    if (!state.doorOpen) { ctx.drawImage(spr.door, X, Y); return; }
+    const a = state.doorAnim, th = state.L.theme;
+    ctx.fillStyle = '#3a2212'; ctx.fillRect(X, Y, TILE, TILE);
+    ctx.fillStyle = '#33241d'; ctx.fillRect(X + 1, Y + 1, TILE - 2, TILE - 2);
+    ctx.fillStyle = 'rgba(255,190,100,' + (0.25 * a) + ')'; ctx.fillRect(X - 6, Y + 2, TILE + 6, TILE - 4);
+    const w = Math.max(0, Math.round(6 * (1 - a)));
+    if (w) { ctx.fillStyle = '#7a4a2a'; ctx.fillRect(X + 1, Y + 1, w, TILE - 2); }
+    // an arrow winking through the opening, so the exit is unmistakable
+    if (!state.L.finale) {
+      // pulses rather than blinks: the way out is never invisible
+      ctx.globalAlpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(state.t * 6));
+      ctx.fillStyle = th.ac;
+      ctx.fillRect(X + 7, Y + 4, 2, 6);
+      ctx.fillRect(X + 5, Y + 8, 6, 2);
+      ctx.fillRect(X + 6, Y + 10, 4, 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+  function drawMaze() {
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const X = x * TILE, Y = HUD + y * TILE, ch = state.map[y][x];
+      if (ch === '#') drawWallTile(X, Y, x, y);
+      else if (ch === 'D') drawDoor(X, Y);
+      else if (x >= state.roomX) drawRoomTile(X, Y, x, y);
+      else drawFloorTile(X, Y, x, y);
+    }
+  }
+  function drawItems() {
+    const key = state.L.item;
+    const bob = Math.round(Math.sin(state.t * 4) * 1.5);
+    for (const b of state.items) {
+      if (b.taken) continue;
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(b.x * TILE + 3, HUD + b.y * TILE + 13, 10, 2);
+      ctx.drawImage(spr.item[key], b.x * TILE, HUD + b.y * TILE + bob);
+    }
+  }
+  function drawHUD() {
+    const L = state.L, th = L.theme;
+    ctx.fillStyle = '#0d0f1e'; ctx.fillRect(0, 0, cv.width, HUD);
+    ctx.fillStyle = th.ac; ctx.fillRect(0, HUD - 2, cv.width, 2);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+    ctx.fillStyle = th.ac; ctx.fillText((state.li + 1) + '/' + LEVELS.length, 4, 8);
+    ctx.fillStyle = '#f4efe2'; ctx.fillText(L.short, 32, 8);
+    for (let i = 0; i < 4; i++) {
+      const s = i < state.got ? spr.item[L.item] : spr.itemDim[L.item];
+      ctx.drawImage(s, cv.width - 76 + i * 18, 4);
+    }
+  }
+  function drawHim() {
+    if (!state.himPos || state.doorAnim <= 0) return;
+    const hugging = state.cut && state.cut.phase === 'hug';
+    const lean = hugging ? Math.round(state.cut.hugT * 4) : 0;
+    const X = state.himPos.x * TILE - lean, Y = HUD + state.himPos.y * TILE;
+    ctx.globalAlpha = state.doorAnim;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(X + 4, Y + 14, 8, 2);
+    if (hugging) ctx.drawImage(spr.himHug, X, Y - 7);
+    else {
+      const hop = state.doorOpen && !state.cut ? -Math.abs(Math.round(Math.sin(state.t * 5) * 1.2)) : 0;
+      ctx.drawImage(spr.him, X, Y - 7 + hop);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawEthan() {
+    if (!state.hasEthan) return;
+    const e = state.ethan;
+    const x = (e.px + (e.tx - e.px) * e.prog) * TILE, y = (e.py + (e.ty - e.py) * e.prog) * TILE + HUD;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(Math.round(x) + 4, Math.round(y) + 14, 8, 2);
+    ctx.drawImage(spr.ethan[e.prog < 1 ? e.frame : 0], Math.round(x), Math.round(y) - 5);
+    if (e.wait > 0 && Math.floor(state.t * 3) % 2 === 0) {
+      ctx.fillStyle = '#f0c060';
+      ctx.fillRect(Math.round(x) + 7, Math.round(y) - 13, 2, 5);
+      ctx.fillRect(Math.round(x) + 7, Math.round(y) - 7, 2, 2);
+    }
+  }
+  function drawShelly() {
+    let x = (state.px + (state.tx - state.px) * state.prog) * TILE;
+    const y = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD;
+    const hugging = state.cut && state.cut.phase === 'hug';
+    if (hugging) x += Math.round(state.cut.hugT * 5);
+    const f = state.prog < 1 ? state.frame : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(Math.round(x) + 4, Math.round(y) + 14, 8, 2);
+    ctx.drawImage(hugging ? spr.shellyHug : spr.shelly[f], Math.round(x), Math.round(y) - 5);
+  }
+  function drawPopups() {
+    for (const p of state.popups) {
+      const y = HUD + p.y * TILE - 4 - p.t * 18;
+      ctx.globalAlpha = 1 - p.t / 0.7;
+      ctx.drawImage(p.big ? spr.heartBig : spr.heart, Math.round(p.x * TILE) + 4, Math.round(y));
+      ctx.globalAlpha = 1;
+    }
+  }
+  function drawBanner() {
+    if (!state.banner) return;
+    const { lines, t, dur } = state.banner;
+    const a = Math.min(1, t * 4, (dur - t) * 2);
+    ctx.globalAlpha = Math.max(0, a);
+    ctx.font = '8px "Press Start 2P", monospace';
+    const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 16;
+    const h = lines.length * 12 + 10;
+    const X = Math.round(cv.width / 2 - w / 2), Y = HUD + 6 * TILE - Math.round(h / 2) + 8;
+    ctx.fillStyle = '#0d0f1e'; ctx.fillRect(X, Y, w, h);
+    ctx.fillStyle = state.L.theme.ac;
+    ctx.fillRect(X, Y, w, 2); ctx.fillRect(X, Y + h - 2, w, 2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    lines.forEach((l, i) => ctx.fillText(l, cv.width / 2, Y + 7 + i * 12));
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  }
+  const TITLE_ITEMS = ['leaf', 'cheese', 'lift', 'beer', 'coffee'];
+  function drawTitle() {
+    const cx = cv.width / 2;
+    ctx.fillStyle = '#0d0f1e'; ctx.fillRect(0, 0, cv.width, cv.height);
+    for (let x = 0; x < COLS; x++) {
+      ctx.fillStyle = (x % 2) ? '#2a2432' : '#1f1a24';
+      ctx.fillRect(x * TILE, 156, TILE, TILE);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.fillStyle = '#8a6a34'; ctx.fillText('FALL TRIP', cx + 2, 36);
+    ctx.fillStyle = '#f0c060'; ctx.fillText('FALL TRIP', cx, 34);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.fillStyle = '#9aa0b8'; ctx.fillText('THE CATSKILLS', cx, 62);
+    ctx.fillStyle = '#f4efe2'; ctx.fillText('NINE STOPS', cx, 82);
+    ctx.fillStyle = '#f4efe2'; ctx.fillText('TWO DAYS', cx, 96);
+    TITLE_ITEMS.forEach((k, i) => {
+      const bob = Math.round(Math.sin(state.t * 3 + i * 0.7) * 2);
+      ctx.drawImage(spr.item[k], 40 + i * 33, 116 + bob);
+    });
+    ctx.drawImage(spr.shelly[Math.floor(state.t * 3) % 2], cx - 8, 152);
+    const p = loadProgress();
+    if (Math.floor(state.t * 2) % 2 === 0) {
+      ctx.fillStyle = '#f0c060';
+      ctx.fillText(p > 0 && p < LEVELS.length ? 'TAP TO CONTINUE' : 'TAP TO START', cx, 196);
+    }
+    if (p > 0 && p < LEVELS.length) {
+      ctx.fillStyle = '#9aa0b8';
+      ctx.fillText('STOP ' + (p + 1) + ' OF ' + LEVELS.length, cx, 212);
+    }
+    ctx.textAlign = 'left';
+  }
+  function render() {
+    if (state.screen === 'title') { drawTitle(); return; }
+    drawMaze(); drawItems(); drawHim(); drawEthan(); drawShelly(); drawPopups(); drawHUD(); drawBanner();
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    update(dt); render();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- input --------------------------------------------------------------
+  function startFromProgress() {
+    unlockAudio();
+    const p = loadProgress();
+    if (p >= LEVELS.length) { clearProgress(); showCard(0); } else showCard(p);
+  }
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+  addEventListener('keydown', (e) => {
+    const d = KEYS[e.key];
+    if (state.screen === 'title' && (d || e.key === ' ' || e.key === 'Enter')) { startFromProgress(); e.preventDefault(); return; }
+    if (state.screen !== 'play') return;
+    if (d) { held.add(d); queued = d; e.preventDefault(); }
+  });
+  addEventListener('keyup', (e) => { const d = KEYS[e.key]; if (d) held.delete(d); });
+
+  for (const btn of document.querySelectorAll('#pad button')) {
+    const d = btn.dataset.dir;
+    const press = (e) => {
+      e.preventDefault();
+      if (state.screen === 'title') { startFromProgress(); return; }
+      if (state.screen !== 'play') return;
+      held.add(d); queued = d; btn.classList.add('held');
+    };
+    const release = () => { held.delete(d); btn.classList.remove('held'); };
+    btn.addEventListener('pointerdown', press);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  let sw = null;
+  cv.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (state.screen === 'title') { startFromProgress(); return; }
+    sw = { x: e.clientX, y: e.clientY, moved: false };
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!sw || state.screen !== 'play') return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (Math.hypot(dx, dy) < 18) return;
+    const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    swipeDir = d; queued = d;
+    sw.x = e.clientX; sw.y = e.clientY; sw.moved = true;
+  });
+  const endSwipe = () => { if (sw && !sw.moved) swipeDir = null; sw = null; };
+  cv.addEventListener('pointerup', endSwipe);
+  cv.addEventListener('pointercancel', endSwipe);
+
+  el('cardgo').addEventListener('click', () => beginLevel(state.li));
+  el('seetrip').addEventListener('click', () => { el('win').hidden = true; el('trip').hidden = false; });
+  el('tripback').addEventListener('click', () => { el('trip').hidden = true; el('win').hidden = false; });
+  for (const b of document.querySelectorAll('.again')) {
+    b.addEventListener('click', () => {
+      if (state.screen === 'win') { clearProgress(); showCard(0); } else beginLevel(state.li);
+    });
+  }
+
+  // the caught screen gets Ethan's face, scaled up
+  {
+    const c = el('losepic'), g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(spr.ethan[0], 0, 0, 16, 20, 0, 0, 64, 80);
+  }
+
+  // the full itinerary, built from the levels so it can never drift from them
+  {
+    const body = el('tripbody');
+    const rows = [];
+    LEVELS.forEach((L) => {
+      if (L.short === "JOSIE'S") rows.push({ day: 2, when: '8:00 AM', title: 'Wake up, no alarm' });
+      rows.push({ day: L.day, when: L.when, title: L.title });
+    });
+    let day = 0;
+    let ol = null;
+    rows.forEach((r) => {
+      if (r.day !== day) {
+        day = r.day;
+        const h = document.createElement('p');
+        h.className = 'day';
+        h.textContent = day === 1 ? 'DAY ONE' : 'DAY TWO';
+        body.appendChild(h);
+        ol = document.createElement('ol');
+        body.appendChild(ol);
+      }
+      const li = document.createElement('li');
+      const b = document.createElement('b');
+      b.textContent = r.when;
+      const s = document.createElement('span');
+      s.textContent = r.title;
+      li.append(b, s);
+      ol.appendChild(li);
+    });
+  }
+
+  // ---- sizing -------------------------------------------------------------
+  // Fractional scaling on purpose: on a 3x phone screen the game pixels land on
+  // 4 or 5 device pixels each, which reads as crisp. Integer-only scaling would
+  // leave the screen tiny on most phones.
+  function fit() {
+    const vw = document.documentElement.clientWidth;
+    const vh = window.visualViewport ? window.visualViewport.height : document.documentElement.clientHeight;
+    const padH = 56 * 3 + 8 + 6 + 30 + 20;
+    const availW = Math.min(vw - 32 - 20, 560);
+    const availH = Math.max(200, vh - padH - 24 - 20);
+    const scale = Math.min(availW / cv.width, availH / cv.height, 3);
+    cv.style.width = Math.floor(cv.width * scale) + 'px';
+    cv.style.height = Math.floor(cv.height * scale) + 'px';
+  }
+  addEventListener('resize', fit);
+  if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
+  fit();
+
+  startTitle();
+  (document.fonts && document.fonts.load ? document.fonts.load('8px "Press Start 2P"') : Promise.resolve())
+    .catch(() => {}).finally(() => requestAnimationFrame(loop));
+})();
+</script>
+
+
+</body>
+</html>
