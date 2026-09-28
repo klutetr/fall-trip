@@ -8,9 +8,14 @@ one ends at Diamond Notch Falls.
 **Play: https://klutetr.github.io/fall-trip/**
 
 There is nothing to collect and nothing to dodge. Each scene is a place with a path
-through it, and the only thing to do is walk to the other side. Stop one is the drive
-up, in the convertible, with him at the wheel. After that he tags along on foot, a
-step or two behind her, until he is waiting at the end of the last trail.
+through it, and the only thing to do is get to the far side. Stop one is the drive up,
+in the convertible, with him at the wheel. After that he tags along on foot, a step or
+two behind her, until he is waiting at the end of the last trail.
+
+The places you eat and drink are all approached from outside: you walk up the street,
+across the lot or through the beer garden, and going in the door is what ends the stop.
+Each building has its own facade, its own name on the sign, and its own hour of the
+day, so no two of them look alike.
 
 - `docs/index.html` is the hosted game (GitHub Pages serves this folder).
 - `index.html` is the same game in the trimmed form used for the claude.ai artifact.

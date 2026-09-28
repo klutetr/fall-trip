@@ -312,8 +312,8 @@
       tiles: { '.': 'road', '~': 'lane', ',': 'grasswall', 'T': 'tree' },
       theme: { accent: '#7f9ce0', ambient: 'rgba(22,30,66,0.40)' },
       map: [
-        ',,TT,XXX,,,,TT,',
-        ',,,T,...,,,,,T,',
+        ',,,,,XXX,,,,,,,',
+        ',,TT,...,,,,TT,',
         ',T,,,.~.,,,,,,,',
         ',,,,,...,,,,TT,',
         ',,TT,.~.,,,,,,,',
@@ -354,25 +354,29 @@
     {
       short: 'LAST CHANCE', day: 1, when: '11:30 AM', title: 'LAST CHANCE CHEESE',
       note: "Lunch in Tannersville. A long table, more cheese than two people need, and nowhere else to be for an hour.",
-      stamp: 'cheese', banner: ['THROUGH THE CAFE'], hint: 'Head for the far door.',
-      companion: 'follow',
-      base: 'wood', objectBase: 'wood',
-      tiles: { '.': 'wood', '#': 'wall', 'C': 'counter', 'K': 'case', 'B': 'table' },
-      theme: { accent: '#f0b040', ambient: 'rgba(60,40,10,0.14)' },
+      stamp: 'cheese', banner: ['LUNCH IS HERE'], hint: 'Cross the street and go in.',
+      companion: 'follow', exitKind: 'door', signText: 'CHEESE',
+      base: 'sidewalk', objectBase: 'sidewalk',
+      tiles: { '.': 'sidewalk', ',': 'street', 'R': 'roof', 'F': 'facade', 'W': 'window', 'S': 'sign',
+               'N': 'planter', 'A': 'board', 'L': 'lamppost' },
+      building: { wall: '#e8d9a8', wallDark: '#c9b98a', wallLight: '#f6ecc9', roof: '#7a4432', roofDark: '#5e3426',
+                  trim: '#f6ecc9', glass: '#8fc8dd', door: '#3a6b4a', doorDark: '#274c34',
+                  sign: '#3a6b4a', signInk: '#f6ecc9' },
+      theme: { accent: '#f0b040', ambient: 'rgba(255,240,200,0.06)' },
       map: [
-        '###############',
-        '#CCCCKCC.....X#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#.......@.....#',
-        '###############',
+        'RRRRRRRRRRRRRRR',
+        'FFFFSSSSSSFFFFF',
+        'FWWFFFFFFFFFWWF',
+        'FWWFFFFXFFFFWWF',
+        '...............',
+        '.N..A......N...',
+        '...............',
+        ',,,,,,,,,,,,,,,',
+        ',,,,,,,,,,,,,,,',
+        '...............',
+        '.L.........L@..',
+        '...............',
+        '...............',
       ],
     },
     {
@@ -404,99 +408,120 @@
     {
       short: 'PEEKAMOOSE', day: 1, when: '5:00 PM', title: 'PEEKAMOOSE',
       note: "Dinner. The good kind, where we stay too long and order one more thing that we absolutely do not need.",
-      stamp: 'plate', banner: ['TABLE FOR TWO'], hint: 'Head for the far door.',
-      companion: 'follow',
-      base: 'wood', objectBase: 'wood',
-      tiles: { '.': 'wood', '#': 'wall', 'C': 'counter', 'S': 'stool', 'B': 'candle' },
-      theme: { accent: '#ff9a52', ambient: 'rgba(95,35,12,0.24)' },
-      glow: [{ x: 2, y: 4, r: 26 }, { x: 8, y: 6, r: 26 }, { x: 5, y: 8, r: 26 }, { x: 11, y: 10, r: 26 }],
+      stamp: 'plate', banner: ['TABLE FOR TWO'], hint: 'Across the lot and in the door.',
+      companion: 'follow', exitKind: 'door', signText: 'PEEKAMOOSE',
+      base: 'gravel', objectBase: 'grass',
+      propBase: { C: 'gravel' },
+      tiles: { '.': 'gravel', ',': 'grass', '@': 'grass', 'R': 'roof', 'F': 'facade', 'W': 'window', 'S': 'sign',
+               'T': 'pine', 'C': 'parkedcar' },
+      building: { wall: '#5a3f2c', wallDark: '#422e20', wallLight: '#6e4f38', roof: '#3a2a1e', roofDark: '#2a1e16',
+                  trim: '#c9a878', glass: '#ffc86e', door: '#8a5a34', doorDark: '#5e3c22',
+                  sign: '#2f4a3a', signInk: '#ffd9a0' },
+      theme: { accent: '#ff9a52', ambient: 'rgba(95,45,20,0.28)' },
+      glow: [{ x: 9, y: 2, r: 34 }, { x: 13, y: 3, r: 30 }],
       map: [
-        '###############',
-        '#CCCCCCC.....X#',
-        '#.SSSS........#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#..B..B..B..B.#',
-        '#.............#',
-        '#.B..B..B..B..#',
-        '#.............#',
-        '#..B..B..B..B.#',
-        '#.......@.....#',
-        '###############',
+        ',,,,,,,,RRRRRRR',
+        'TT,,,,,,FFSSSSF',
+        ',,T,,,,,FWWFFFF',
+        ',,,,,,,,FWWFFXF',
+        ',,,,,,,,.......',
+        ',,T,,,,,.......',
+        '........C......',
+        '...............',
+        '...............',
+        ',,T,,,,,,T,,,,,',
+        ',,,,,,@,,,,,,,,',
+        ',,,,,,,,,,,,,,,',
+        ',,T,,,,,,,,,T,,',
       ],
     },
     {
       short: 'BREWERY', day: 1, when: '8:00 PM', title: 'UPWARD / WEST KILL',
       note: "Upward, or West Kill if we are feeling it. One drink. Cold mountain air. Phones stay in the car.",
-      stamp: 'beer', banner: ['ONE MORE ROUND'], hint: 'Head for the far gate.',
-      companion: 'follow',
+      stamp: 'beer', banner: ['ONE MORE ROUND'], hint: 'Through the garden and in the door.',
+      companion: 'follow', exitKind: 'door', signText: 'BREWERY',
       base: 'gravel', objectBase: 'gravel',
-      tiles: { '.': 'gravel', '#': 'wall', 'K': 'tank', 'C': 'counter', 'S': 'stool', 'P': 'picnic', 'T': 'tree' },
-      theme: { accent: '#f0c060', ambient: 'rgba(18,24,58,0.36)' },
-      glow: [{ x: 7, y: 1, r: 54 }, { x: 3, y: 5, r: 38 }, { x: 11, y: 7, r: 38 }],
+      propBase: { P: 'grass', Q: 'grass' },
+      tiles: { '.': 'gravel', ',': 'grass', 'R': 'roof', 'F': 'facade', 'W': 'window', 'S': 'sign',
+               'K': 'picnic', 'Q': 'tank', 'P': 'pine' },
+      building: { wall: '#8a3a32', wallDark: '#6a2a24', wallLight: '#a34a40', roof: '#3a3238', roofDark: '#2a242a',
+                  trim: '#e8d9a8', glass: '#ffc86e', door: '#5a4030', doorDark: '#3e2c20',
+                  sign: '#2a2a2e', signInk: '#f0c060' },
+      theme: { accent: '#f0c060', ambient: 'rgba(18,24,58,0.40)' },
+      glow: [{ x: 2, y: 2, r: 34 }, { x: 7, y: 2, r: 30 }, { x: 4, y: 6, r: 44 }, { x: 9, y: 8, r: 44 }],
       map: [
-        '###############',
-        '#KKK.CCCCC...X#',
-        '#.....SSS.....#',
-        '#.............#',
-        '#.P...P...P...#',
-        '#.............#',
-        '#...P...P...P.#',
-        '#.............#',
-        '#.P...P...P...#',
-        '#.............#',
-        '#..TT.....TT..#',
-        '#......@......#',
-        '###############',
+        'RRRRRRRRR,,,,,,',
+        'FFSSSSSFF,,,,,,',
+        'FWWFFFWWF,QQ,,,',
+        'FWWFXFFWF,QQ,,,',
+        '.........,,,,,,',
+        '...............',
+        '..K...K...K....',
+        '...............',
+        '..K...K...K....',
+        '...............',
+        ',,P,,,,,,,,P,,,',
+        '............@..',
+        ',,,,,,,,,,,,,,,',
       ],
     },
     {
       short: "JOSIE'S", day: 2, when: '9:00 AM', title: "JOSIE'S COFFEE",
       note: "You wake up at 8 with no alarm anywhere near you. Coffee at 9, slowly. Nothing on the schedule but this.",
-      stamp: 'coffee', banner: ['COFFEE FIRST'], hint: 'Head for the far door.',
-      companion: 'follow',
-      base: 'tilefloor', objectBase: 'tilefloor',
-      tiles: { '.': 'tilefloor', '#': 'wall', 'C': 'counter', 'E': 'espresso', 'B': 'table', 'S': 'stool' },
-      theme: { accent: '#4fb0e8', ambient: 'rgba(255,220,150,0.10)' },
+      stamp: 'coffee', banner: ['COFFEE FIRST'], hint: 'Up the block and in the door.',
+      companion: 'follow', exitKind: 'door', signText: "JOSIE'S",
+      base: 'sidewalk', objectBase: 'sidewalk',
+      propBase: { T: 'grass' },
+      tiles: { '.': 'sidewalk', ',': 'grass', 'R': 'roof', 'F': 'facade', 'W': 'window', 'S': 'sign',
+               'N': 'planter', 'B': 'bench', 'L': 'lamppost', 'T': 'tree' },
+      building: { wall: '#8fc9b8', wallDark: '#6fa798', wallLight: '#a9dccb', roof: '#c9573f', roofDark: '#a3422e',
+                  trim: '#f6f2ea', glass: '#bfe4ff', door: '#c9573f', doorDark: '#a3422e',
+                  sign: '#f6f2ea', signInk: '#c9573f' },
+      theme: { accent: '#4fb0e8', ambient: 'rgba(255,225,160,0.08)' },
       map: [
-        '###############',
-        '#CCECCC......X#',
-        '#..SSS........#',
-        '#.............#',
-        '#.B..B...B..B.#',
-        '#.............#',
-        '#.B..B...B..B.#',
-        '#.............#',
-        '#.B..B...B..B.#',
-        '#.............#',
-        '#.............#',
-        '#......@......#',
-        '###############',
+        'RRRRRR,,,,,,,,,',
+        'FSSSSF,,,,TT,,,',
+        'FWWWWF,,,,,,,,,',
+        'FWWXWF,,,,,,,,,',
+        '...............',
+        '.N.B........N..',
+        '...............',
+        '...............',
+        '.L..........L..',
+        '...............',
+        '............@..',
+        '...............',
+        '...............',
       ],
     },
     {
       short: "GRACIE'S", day: 2, when: '9:30 AM', title: "GRACIE'S",
       note: "Breakfast. Which, if we are being honest with ourselves, is the real reason we drove all the way up here.",
-      stamp: 'pancake', banner: ['BREAKFAST TIME'], hint: 'Head for the far door.',
-      companion: 'follow',
-      base: 'checker', objectBase: 'checker',
-      tiles: { '.': 'checker', '#': 'wall', 'C': 'counter', 'S': 'stool', 'N': 'booth' },
-      theme: { accent: '#ff6f91', ambient: 'rgba(255,230,180,0.07)' },
+      stamp: 'pancake', banner: ['BREAKFAST TIME'], hint: 'Across the lot and in the door.',
+      companion: 'follow', exitKind: 'door', signText: "GRACIE'S",
+      base: 'street', objectBase: 'street',
+      propBase: { T: 'grass' },
+      tiles: { '.': 'street', ',': 'grass', 'R': 'roof', 'F': 'facade', 'W': 'window', 'S': 'sign',
+               'C': 'parkedcar', 'V': 'parkedcarB', 'Z': 'parkedcarC', 'B': 'parkedcarB',
+               'L': 'lamppost' },
+      building: { wall: '#f0ece0', wallDark: '#cfc9bb', wallLight: '#ffffff', roof: '#c0392b', roofDark: '#96291f',
+                  trim: '#c0392b', glass: '#bfe4ff', door: '#c0392b', doorDark: '#96291f',
+                  sign: '#c0392b', signInk: '#fff8e8' },
+      theme: { accent: '#ff6f91', ambient: 'rgba(255,235,190,0.06)' },
       map: [
-        '###############',
-        '#CCCCCCCC....X#',
-        '#.SSSSSSS.....#',
-        '#.............#',
-        '#N..N..N..N..N#',
-        '#.............#',
-        '#.............#',
-        '#N..N..N..N..N#',
-        '#.............#',
-        '#.............#',
-        '#N..N..N..N..N#',
-        '#......@......#',
-        '###############',
+        ',,RRRRRRRRRRR,,',
+        ',,FSSSSSSSSSF,,',
+        ',,FWWWWWWWWWF,,',
+        ',,FWWWWXWWWWF,,',
+        '...............',
+        '.C...V...Z...C.',
+        '...............',
+        '.L...........L.',
+        '.Z...C...V...B.',
+        '...............',
+        '.@.............',
+        '...............',
+        '...............',
       ],
     },
     {
@@ -836,6 +861,80 @@
   // Scenery. Every object tile is 16x16 and is drawn 4px high so it overlaps
   // the tile above it, which gives the scene a bit of depth.
   const PROPS = {
+    planter: { pal: { f: '#4a7a3a', F: '#e8607a', o: '#5a4026', b: '#a87f4a' }, rows: [
+      '................',
+      '................',
+      '................',
+      '....ffffffff....',
+      '....fFFfFFff....',
+      '....ffffffff....',
+      '...oooooooooo...',
+      '...obbbbbbbbo...',
+      '...obbbbbbbbo...',
+      '...obbbbbbbbo...',
+      '...oooooooooo...',
+      '................', '................', '................', '................', '................',
+    ] },
+    lamppost: { pal: { o: '#3a3a42', a: '#ffe6a8' }, rows: [
+      '.....oooooo.....',
+      '....oaaaaaao....',
+      '....oaaaaaao....',
+      '.....oooooo.....',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '......oooo......',
+      '.....oooooo.....',
+      '................', '................', '................', '................',
+    ] },
+    bench: { pal: { o: '#5a4026', b: '#a87f4a' }, rows: [
+      '................', '................', '................',
+      '.oooooooooooooo.',
+      '.obbbbbbbbbbbbo.',
+      '.oooooooooooooo.',
+      '.obbbbbbbbbbbbo.',
+      '.oooooooooooooo.',
+      '..o..........o..',
+      '..o..........o..',
+      '................', '................', '................', '................', '................', '................',
+    ] },
+    board: { pal: { o: '#4a3423', k: '#2a2a2e', w: '#d8d2c4' }, rows: [
+      '................', '................',
+      '....oooooooo....',
+      '....okkkkkko....',
+      '....okwwwwko....',
+      '....okkkkkko....',
+      '....okwwwwko....',
+      '....okkkkkko....',
+      '....oooooooo....',
+      '.....o....o.....',
+      '....o......o....',
+      '....o......o....',
+      '................', '................', '................', '................',
+    ] },
+    parkedcar: { pal: { b: '#8a8f98', o: '#4a4e56', c: '#9fc8e8', w: '#141418' }, rows: [
+      '................',
+      '..oooooooooooo..',
+      '..obbbbbbbbbbo..',
+      'w.obbbbbbbbbbo.w',
+      'w.occcccccccco.w',
+      '..obbbbbbbbbbo..',
+      '..obbbbbbbbbbo..',
+      '..obbbbbbbbbbo..',
+      '..occcccccccco..',
+      'w.obbbbbbbbbbo.w',
+      'w.obbbbbbbbbbo.w',
+      '..oooooooooooo..',
+      '................',
+      '................',
+      '................',
+      '................',
+    ] },
+    parkedcarB: { base: 'parkedcar', pal: { b: '#a8443a', o: '#6e2a24', c: '#9fc8e8', w: '#141418' } },
+    parkedcarC: { base: 'parkedcar', pal: { b: '#4a6b4a', o: '#31492f', c: '#9fc8e8', w: '#141418' } },
     tree: { pal: { a: '#c85a2a', b: '#e08a3a', t: '#4a3526', o: '#33241a' }, rows: [
       '.....aaaaaa.....',
       '...aaaaaaaaaa...',
@@ -887,85 +986,6 @@
       '...ooooooooo....',
       '................', '................', '................', '................',
     ] },
-    table: { pal: { a: '#e0cfa8', o: '#4a3423', c: '#3a2817' }, rows: [
-      '................',
-      '.....cccccc.....',
-      '.....cccccc.....',
-      '................',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oooooooooooo..',
-      '................',
-      '.....cccccc.....',
-      '.....cccccc.....',
-      '................', '................', '................',
-    ] },
-    candle: { pal: { a: '#e0cfa8', o: '#4a3423', c: '#3a2817', f: '#ffd27a' }, rows: [
-      '................',
-      '.....cccccc.....',
-      '.....cccccc.....',
-      '................',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaffaaaao..',
-      '..oaaaaffaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oooooooooooo..',
-      '................',
-      '.....cccccc.....',
-      '.....cccccc.....',
-      '................', '................', '................',
-    ] },
-    counter: { pal: { a: '#c9a06a', o: '#4a3420', b: '#3a2a1c' }, rows: [
-      'oooooooooooooooo',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oooooooooooooooo',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-      'bbbbbbbbbbbbbbbb',
-    ] },
-    stool: { pal: { a: '#c99a5a', o: '#5a4026' }, rows: [
-      '................', '................',
-      '...oooooooooo...',
-      '...oaaaaaaaao...',
-      '...oaaaaaaaao...',
-      '...oooooooooo...',
-      '......oooo......',
-      '......oooo......',
-      '.....oooooo.....',
-      '................', '................', '................',
-      '................', '................', '................', '................',
-    ] },
-    booth: { pal: { a: '#ede4cc', b: '#a8384a', o: '#3a1620' }, rows: [
-      'oooooooooooooooo',
-      'obbbbbbbbbbbbbbo',
-      'obbbbbbbbbbbbbbo',
-      'oooooooooooooooo',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oaaaaaaaaaaaaaao',
-      'oooooooooooooooo',
-      'obbbbbbbbbbbbbbo',
-      'obbbbbbbbbbbbbbo',
-      'oooooooooooooooo',
-      '................', '................',
-    ] },
     tank: { pal: { a: '#c6ccd4', h: '#eef2f6', o: '#5a6069' }, rows: [
       '.....oooooo.....',
       '....oaaaaaao....',
@@ -983,19 +1003,6 @@
       '.....oooooo.....',
       '......o..o......',
       '................',
-    ] },
-    espresso: { pal: { a: '#8a8f96', b: '#2a2a2e', o: '#5a5f66' }, rows: [
-      '................',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oabbaaaabbao..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oo........oo..',
-      '................', '................', '................', '................', '................', '................',
     ] },
     lifttower: { pal: { o: '#6a6f78', a: '#9aa0a8' }, rows: [
       '..aaaaaaaaaaaa..',
@@ -1047,19 +1054,6 @@
       '.obbbbbbbbbbbbo.',
       '.oooooooooooooo.',
       '................',
-    ] },
-    case: { pal: { a: '#cfd6dd', b: '#e8dfc0', c: '#f0c23a', o: '#7a6a58' }, rows: [
-      '................',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..obbbbbbbbbbo..',
-      '..obbccbbccbbo..',
-      '..obbccbbccbbo..',
-      '..obbbbbbbbbbo..',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oooooooooooo..',
-      '................', '................', '................', '................', '................', '................',
     ] },
   };
 
@@ -1141,22 +1135,6 @@
       GROUND.road(X, Y, x, y);
       ctx.fillStyle = '#e8c04a'; ctx.fillRect(X + 7, Y + 2, 2, 12);
     },
-    wood(X, Y, x, y) {
-      ctx.fillStyle = '#6b4a30'; ctx.fillRect(X, Y, TILE, TILE);
-      ctx.fillStyle = '#5a3d27'; ctx.fillRect(X, Y + 7, TILE, 1); ctx.fillRect(X, Y + 15, TILE, 1);
-      ctx.fillStyle = '#7a573a'; ctx.fillRect(X + ((y % 2) ? 4 : 11), Y, 1, 8);
-    },
-    tilefloor(X, Y, x, y) {
-      for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) {
-        ctx.fillStyle = ((x * 2 + a) + (y * 2 + b)) % 2 ? '#d8d2c4' : '#c8c1b0';
-        ctx.fillRect(X + a * 8, Y + b * 8, 8, 8);
-      }
-    },
-    checker(X, Y, x, y) {
-      ctx.fillStyle = (x + y) % 2 ? '#e2dccc' : '#5d5760';
-      ctx.fillRect(X, Y, TILE, TILE);
-      ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(X, Y, TILE, 1);
-    },
     bridge(X, Y, x, y) {
       ctx.fillStyle = '#7a5a38'; ctx.fillRect(X, Y, TILE, TILE);
       ctx.fillStyle = '#5f462b';
@@ -1184,15 +1162,67 @@
       speckle(X, Y, x, y, 5, '#55524b', '#5e5b53', 31);
       ctx.fillStyle = '#46443e'; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
     },
-    wall(X, Y, x, y) {
-      ctx.fillStyle = '#c9b48e'; ctx.fillRect(X, Y, TILE, TILE);
-      ctx.fillStyle = '#e0cfa8'; ctx.fillRect(X, Y, TILE, 2);
-      ctx.fillStyle = '#a8946f'; ctx.fillRect(X, Y + 7, TILE, 1);
-      ctx.fillStyle = '#8a7758'; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    street(X, Y, x, y) {
+      ctx.fillStyle = '#34343d'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 4, '#3c3c46', '#2d2d36', 11);
+    },
+    sidewalk(X, Y, x, y) {
+      ctx.fillStyle = '#b4afa2'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#a29d90'; ctx.fillRect(X, Y + TILE - 1, TILE, 1); ctx.fillRect(X + TILE - 1, Y, 1, TILE);
+      speckle(X, Y, x, y, 3, '#bdb8ab', '#aaa598', 29);
+    },
+    // ---- the building a stop is named after --------------------------------
+    roof(X, Y, x, y) {
+      const b = state.L.building;
+      ctx.fillStyle = b.roof; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = b.roofDark;
+      for (let i = 4; i < TILE; i += 5) ctx.fillRect(X, Y + i, TILE, 1);
+      ctx.fillStyle = b.trim; ctx.fillRect(X, Y, TILE, 2);
+      ctx.fillStyle = b.roofDark; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    },
+    facade(X, Y, x, y) {
+      const b = state.L.building;
+      ctx.fillStyle = b.wall; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = b.wallDark;
+      for (let i = 3; i < TILE; i += 4) ctx.fillRect(X, Y + i, TILE, 1);
+      ctx.fillStyle = b.wallLight; ctx.fillRect(X, Y, TILE, 1);
+    },
+    window(X, Y, x, y) {
+      GROUND.facade(X, Y, x, y);
+      const b = state.L.building;
+      ctx.fillStyle = b.trim; ctx.fillRect(X + 1, Y + 2, TILE - 2, TILE - 5);
+      ctx.fillStyle = b.glass; ctx.fillRect(X + 2, Y + 3, TILE - 4, TILE - 7);
+      ctx.fillStyle = b.trim;
+      ctx.fillRect(X + 7, Y + 3, 1, TILE - 7);
+      ctx.fillRect(X + 2, Y + 7, TILE - 4, 1);
+    },
+    sign(X, Y, x, y) {
+      GROUND.facade(X, Y, x, y);
+      const b = state.L.building;
+      ctx.fillStyle = b.signInk; ctx.fillRect(X, Y + 2, TILE, TILE - 5);
+      ctx.fillStyle = b.sign; ctx.fillRect(X, Y + 3, TILE, TILE - 7);
+    },
+    door(X, Y, x, y) {
+      GROUND.facade(X, Y, x, y);
+      const b = state.L.building;
+      ctx.fillStyle = b.doorDark; ctx.fillRect(X + 1, Y + 1, TILE - 2, TILE - 1);
+      ctx.fillStyle = b.door; ctx.fillRect(X + 2, Y + 2, TILE - 4, TILE - 2);
+      ctx.fillStyle = b.doorDark; ctx.fillRect(X + 3, Y + 4, TILE - 6, 4);
+      ctx.fillStyle = b.trim; ctx.fillRect(X + TILE - 5, Y + 9, 2, 2);
+      // the way in pulses as a frame around the door, not a wash over it, so
+      // the door keeps its own colour
+      const pulse = 0.5 + 0.5 * Math.sin(state.t * 5);
+      ctx.globalAlpha = 0.35 + 0.45 * pulse;
+      ctx.fillStyle = state.L.theme.accent;
+      ctx.fillRect(X, Y, TILE, 2);
+      ctx.fillRect(X, Y, 2, TILE);
+      ctx.fillRect(X + TILE - 2, Y, 2, TILE);
+      ctx.globalAlpha = 1;
     },
   };
   // solid: the scenery props, plus the full-tile kinds you cannot walk on
-  const SOLID = new Set(['grasswall', 'water', 'falls', 'cliff', 'wall', 'him'].concat(Object.keys(PROPS)));
+  const SOLID = new Set(['grasswall', 'water', 'falls', 'cliff', 'him',
+    'roof', 'facade', 'window', 'sign'].concat(Object.keys(PROPS)));
 
   // ---- state --------------------------------------------------------------
   const SPEED = 5;   // a stroll, not a sprint: there is scenery to look at
@@ -1203,7 +1233,7 @@
     screen: 'title', li: 0, L: LEVELS[0], map: LEVELS[0].map,
     px: 0, py: 0, tx: 0, ty: 0, prog: 1, dir: 'down', frame: 0, t: 0,
     banner: null, cut: null, advancing: false,
-    goal: { x: 0, y: 0 }, exitDir: 'up', himPos: null,
+    goal: { x: 0, y: 0 }, exitDir: 'up', himPos: null, signBox: null,
     comp: null, trail: [], popups: [],
   };
   const held = new Set();
@@ -1217,9 +1247,9 @@
   function kindAt(x, y) {
     const L = state.L, ch = at(x, y);
     if (ch === '#') return L.tiles['#'] || 'cliff';
-    if (ch === 'X') return 'exit';
+    if (ch === 'X') return L.exitKind || 'exit';
     if (ch === 'M') return 'him';
-    if (ch === '@') return L.base;
+    if (ch === '@') return L.tiles['@'] || L.base;
     return L.tiles[ch] || L.base;
   }
   const solid = (x, y) => SOLID.has(kindAt(x, y));
@@ -1250,12 +1280,19 @@
     state.prog = 1; state.dir = L.companion === 'car' ? 'up' : 'up';
     state.frame = 0; state.banner = null; state.cut = null;
     state.advancing = false; state.trail = []; state.popups = [];
-    state.himPos = null; state.comp = null;
+    state.himPos = null; state.comp = null; state.signBox = null;
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       const ch = L.map[y][x];
       if (ch === '@') { state.px = state.tx = x; state.py = state.ty = y; }
       else if (ch === 'X') state.goal = { x, y };
       else if (ch === 'M') { state.himPos = { x, y }; state.goal = { x, y }; }
+    }
+    if (L.signText) {
+      let x0 = 99, x1 = -1, sy = -1;
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+        if ((L.tiles[L.map[y][x]] || '') === 'sign') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); sy = y; }
+      }
+      if (sy >= 0) state.signBox = { x0, x1, y: sy };
     }
     // which way the exit faces, for the marker chevron
     const g = state.goal;
@@ -1312,7 +1349,8 @@
       if (h && Math.abs(h.x - state.tx) + Math.abs(h.y - state.ty) <= 1) beginCutscene();
       return;
     }
-    if (kindAt(state.tx, state.ty) === 'exit') completeLevel();
+    const k = kindAt(state.tx, state.ty);
+    if (k === 'exit' || k === 'door') completeLevel();
   }
   function updatePlay(dt) {
     if (stepWalk(dt)) arrive();
@@ -1495,11 +1533,28 @@
       const X = x * TILE, Y = HUD + y * TILE;
       const k = kindAt(x, y);
       if (k === 'exit') { GROUND[L.base](X, Y, x, y); drawExit(X, Y); continue; }
+      if (k === 'door') { GROUND.door(X, Y, x, y); continue; }
       if (k === 'him') { GROUND[L.objectBase](X, Y, x, y); continue; }
       if (GROUND[k]) { GROUND[k](X, Y, x, y); continue; }
-      GROUND[L.objectBase](X, Y, x, y);
+      // a prop can name the ground it stands on, so a tree gets grass under it
+      // while a parked car in the same scene gets asphalt
+      const base = (L.propBase && L.propBase[state.map[y][x]]) || L.objectBase;
+      GROUND[base](X, Y, x, y);
       ctx.drawImage(spr.prop[k], X, Y - 4);
     }
+    drawSign();
+  }
+  // the shop's name, sized to fit whatever run of sign tiles it was given
+  function drawSign() {
+    const L = state.L, s = state.signBox;
+    if (!s || !L.signText) return;
+    const avail = (s.x1 - s.x0 + 1) * TILE - 4;
+    const size = Math.max(5, Math.min(8, Math.floor(avail / L.signText.length)));
+    ctx.font = size + 'px "Press Start 2P", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = L.building.signInk;
+    ctx.fillText(L.signText, (s.x0 + s.x1 + 1) * TILE / 2, HUD + s.y * TILE + 8);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   }
   function shadow(x, y) {
     ctx.fillStyle = 'rgba(0,0,0,0.32)';
