@@ -122,8 +122,10 @@
   }
   .overlay button.ghost:hover { color: var(--text); }
 
-  /* ---- the postcard that opens each stop --------------------------------- */
-  #card {
+  /* ---- the checklist -----------------------------------------------------
+     The paper between stops, and again at the end: one line per stop, the
+     ones behind us crossed off, the next one lit. */
+  #card, #trip {
     background: #f2e9d2;
     color: #2a2418;
     justify-content: flex-start;
@@ -132,8 +134,7 @@
     padding: 0;
     background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.035) 0 1px, transparent 1px 4px);
   }
-  #card .band {
-    background: var(--accent);
+  #card .band, #trip .band {
     color: #2a2418;
     padding: 7px 12px;
     display: flex; align-items: center; justify-content: space-between;
@@ -141,53 +142,73 @@
     border-bottom: 3px solid rgba(0,0,0,.28);
     flex: none;
   }
-  #card .body {
-    flex: 1 1 auto;
-    padding: 12px 14px 8px;
-    display: flex; flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
+  #card .band { background: var(--accent); }
+  #trip .band { background: var(--gold); }
+
+  .sheet {
+    position: relative;
+    flex: 1 1 auto; overflow-y: auto; min-height: 0;
+    padding: 10px 12px;
+    -webkit-overflow-scrolling: touch;
   }
-  #card .top {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex: none;
+  .sheet .day {
+    font-family: 'Press Start 2P', monospace; font-size: 9px;
+    color: #8a6a34; margin: 10px 0 5px; letter-spacing: .04em;
   }
-  #card .meta { min-width: 0; }
-  #card .stamp {
-    width: 56px; height: 56px;
-    background: #fff8e8;
-    border: 3px dashed var(--cream-shade);
-    box-sizing: border-box;
-    image-rendering: pixelated;
-    flex: none;
+  .sheet .day:first-child { margin-top: 0; }
+  .sheet ol { list-style: none; margin: 0; padding: 0; }
+  .sheet li {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 20px; line-height: 1.2;
+    padding: 3px 4px; color: #6f6450;
+    transition: color .3s, background-color .3s;
   }
-  #card .when {
-    font-family: 'Press Start 2P', monospace; font-size: 10px;
-    color: #8a6a34; margin: 0 0 6px;
+  .sheet .when { flex: none; width: 74px; white-space: nowrap; font-weight: normal; }
+  .sheet .what { position: relative; }
+  .sheet li.done { color: #9c907a; }
+  /* the stop she is about to walk: lit paper, and its stamp for a marker */
+  .sheet li.now { color: #2a2418; background: #fff8e8; box-shadow: inset 3px 0 0 var(--accent); }
+
+  /* the marker: an empty box until the stop is behind us, then a tick */
+  .sheet .mark { position: relative; flex: none; width: 16px; height: 16px; }
+  .sheet .box {
+    position: absolute; inset: 0;
+    background: #fff8e8; box-shadow: inset 0 0 0 2px #c0b291;
+    transition: opacity .25s, box-shadow .2s;
   }
-  #card h2 {
-    font-family: 'Press Start 2P', monospace; font-size: 12px;
-    margin: 0; line-height: 1.45; color: #2a2418;
-    text-wrap: balance;
+  .sheet .tick {
+    position: absolute; left: 3px; top: 9px; width: 2px; height: 2px;
+    color: #2a2418; background: currentColor;
+    box-shadow: 2px 2px 0, 4px 0 0, 6px -2px 0, 8px -4px 0;
+    transform: scale(0); transform-origin: 1px 1px;
+    transition: transform .2s steps(4);
   }
-  #card .note {
-    /* auto top and bottom: the slack splits evenly so short notes sit centred
-       on the card instead of stranding all the blank paper underneath */
-    font-size: 23px; line-height: 1.32; color: #4a4030; margin: auto 0;
-    max-width: none;
+  .sheet .stamp {
+    position: absolute; inset: 0; width: 16px; height: 16px;
+    image-rendering: pixelated; opacity: 0; transition: opacity .25s;
   }
-  /* nine squares: where this stop sits in the trip */
-  #card .dots { display: flex; gap: 5px; justify-content: center; margin: 12px 0 10px; flex: none; }
-  #card .dots span { width: 9px; height: 9px; background: #d8cdb0; }
-  #card .dots span.done { background: #8a6a34; }
-  #card .dots span.now { background: var(--accent); outline: 2px solid #2a2418; outline-offset: 1px; }
+  .sheet li.now .box { opacity: 0; }
+  .sheet li.now .stamp { opacity: 1; }
+  .sheet li.done .box { box-shadow: inset 0 0 0 2px #2a2418; }
+  .sheet li.done .tick { transform: scale(1); }
+
+  /* the line through a stop, drawn on as it is crossed off */
+  .sheet .what::after {
+    content: ''; position: absolute; left: -2px; right: -2px; top: 52%;
+    height: 2px; background: currentColor;
+    transform: scaleX(0); transform-origin: left center;
+    transition: transform .4s steps(14);
+  }
+  .sheet li.done .what::after { transform: scaleX(1); }
+
+  .foot { flex: none; padding: 8px 14px 10px; border-top: 3px solid rgba(0,0,0,.18); text-align: center; }
+  .foot button { margin: 0; }
   #card .go {
-    margin: 0; align-self: center;
     background: #2a2418; color: #f2e9d2;
     box-shadow: inset -3px -3px 0 rgba(0,0,0,.4), inset 3px 3px 0 rgba(255,255,255,.18);
   }
 
-  /* ---- win / itinerary --------------------------------------------------- */
+  /* ---- win --------------------------------------------------------------- */
   #win h1 { font-size: 14px; margin: 0; color: var(--gold); text-shadow: 3px 3px 0 #8a6a34; }
   #win img {
     height: 150px; max-height: 38%; width: auto; aspect-ratio: 2 / 3;
@@ -198,25 +219,6 @@
   }
   #win .love { color: var(--pink); font-size: 26px; }
   #win .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
-
-  #trip { background: #f2e9d2; color: #2a2418; justify-content: flex-start; align-items: stretch; text-align: left; padding: 0; }
-  #trip .band {
-    background: var(--gold); color: #2a2418; padding: 7px 12px; flex: none;
-    font-family: 'Press Start 2P', monospace; font-size: 9px;
-    border-bottom: 3px solid rgba(0,0,0,.28);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  #trip .scroll { flex: 1 1 auto; overflow-y: auto; padding: 8px 14px; min-height: 0; -webkit-overflow-scrolling: touch; }
-  #trip .day {
-    font-family: 'Press Start 2P', monospace; font-size: 9px;
-    color: #8a6a34; margin: 8px 0 4px; letter-spacing: .04em;
-  }
-  #trip .day:first-child { margin-top: 0; }
-  #trip ol { list-style: none; margin: 0; padding: 0; }
-  #trip li { display: flex; gap: 8px; font-size: 19px; line-height: 1.25; padding: 1px 0; color: #4a4030; }
-  #trip li b { flex: none; width: 70px; color: #2a2418; font-weight: normal; }
-  #trip .foot { flex: none; padding: 6px 14px 8px; border-top: 3px solid rgba(0,0,0,.18); text-align: center; }
-  #trip .foot button { margin: 0; }
 
   /* floating hearts on the win screen */
   .heart {
@@ -232,26 +234,19 @@
   }
   @keyframes float { from { transform: translateY(110%); } to { transform: translateY(-40px); } }
   @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .heart, #win img { animation: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .heart, #win img { animation: none; }
+    .sheet li, .sheet .box, .sheet .tick, .sheet .stamp, .sheet .what::after { transition: none; }
+  }
 </style>
 
 <div id="shell">
   <canvas id="game" width="240" height="232" aria-label="Fall Trip: walk through each stop on the itinerary"></canvas>
 
   <div id="card" class="overlay" hidden>
-    <div class="band"><span id="cardday">DAY ONE</span><span id="cardnum">STOP 1 / 9</span></div>
-    <div class="body">
-      <div class="top">
-        <div class="meta">
-          <p class="when" id="cardwhen">7:00 AM</p>
-          <h2 id="cardtitle">THE DEPARTURE</h2>
-        </div>
-        <canvas class="stamp" id="cardstamp" width="16" height="16" aria-hidden="true"></canvas>
-      </div>
-      <p class="note" id="cardnote"></p>
-      <div class="dots" id="carddots" aria-hidden="true"></div>
-      <button class="go" type="button" id="cardgo">LET'S GO</button>
-    </div>
+    <div class="band"><span>THE FALL TRIP</span><span id="cardnum">STOP 1 / 9</span></div>
+    <div class="sheet" id="cardlist"></div>
+    <div class="foot"><button class="go" type="button" id="cardgo">LET'S GO</button></div>
   </div>
 
   <div id="win" class="overlay" hidden>
@@ -266,7 +261,7 @@
 
   <div id="trip" class="overlay" hidden>
     <div class="band"><span>THE FALL TRIP</span><span>2 DAYS</span></div>
-    <div class="scroll" id="tripbody"></div>
+    <div class="sheet" id="tripbody"></div>
     <div class="foot"><button type="button" id="tripback">BACK</button></div>
   </div>
 </div>
@@ -291,7 +286,6 @@
   const LEVELS = [
     {
       short: 'DEPART', day: 1, when: '7:00 AM', title: 'THE DEPARTURE',
-      note: "Still dark out. Top down, heat on, coffee in the cupholder. I'm driving. You pick the music.",
       stamp: 'car', banner: ['DRIVE NORTH'], hint: 'Follow the road north.',
       companion: 'car', vehicle: 'car', headlights: true,
       base: 'road', objectBase: 'grass',
@@ -315,7 +309,6 @@
     },
     {
       short: 'KAATERSKILL', day: 1, when: '9:45 AM', title: 'KAATERSKILL FALLS',
-      note: "Two waterfalls before lunch. Kaaterskill first, then Plattekill down the road. Follow the trail down to the water.",
       stamp: 'leaf', banner: ['DOWN TO THE FALLS'], hint: 'Follow the trail to the overlook.',
       companion: 'follow',
       base: 'dirt', alt: 'grass', objectBase: 'grass',
@@ -339,7 +332,6 @@
     },
     {
       short: 'LAST CHANCE', day: 1, when: '11:30 AM', title: 'LAST CHANCE CHEESE',
-      note: "Lunch in Tannersville. A long table, more cheese than two people need, and nowhere else to be for an hour.",
       stamp: 'cheese', banner: ['LUNCH IS HERE'], hint: 'Cross the street and go in.',
       companion: 'follow', exitKind: 'door', signText: 'CHEESE',
       base: 'sidewalk', objectBase: 'sidewalk',
@@ -367,7 +359,6 @@
     },
     {
       short: 'HUNTER MTN', day: 1, when: '1:00 PM', title: 'HUNTER MOUNTAIN',
-      note: "Ride the lift up over the treetops. Walk out to the fire tower at the top and climb it anyway. The whole valley is turning gold from up there.",
       stamp: 'lift', banner: ['UP AND OVER'], hint: 'Ride the lift to the top.',
       companion: 'car', vehicle: 'chair',
       base: 'cable', exitBase: 'platform', objectBase: 'canopy', prepass: 'canopyBase',
@@ -391,7 +382,6 @@
     },
     {
       short: 'PEEKAMOOSE', day: 1, when: '5:00 PM', title: 'PEEKAMOOSE',
-      note: "Dinner. The good kind, where we stay too long and order one more thing that we absolutely do not need.",
       stamp: 'plate', banner: ['TABLE FOR TWO'], hint: 'Across the lot and in the door.',
       companion: 'follow', exitKind: 'door', signText: 'PEEKAMOOSE',
       base: 'gravel', objectBase: 'grass',
@@ -421,7 +411,6 @@
     },
     {
       short: 'BREWERY', day: 1, when: '8:00 PM', title: 'UPWARD / WEST KILL',
-      note: "Upward, or West Kill if we are feeling it. One drink. Cold mountain air. Phones stay in the car.",
       stamp: 'beer', banner: ['ONE MORE ROUND'], hint: 'Through the garden and in the door.',
       companion: 'follow', exitKind: 'door', signText: 'BREWERY',
       base: 'gravel', objectBase: 'gravel',
@@ -451,7 +440,6 @@
     },
     {
       short: "JOSIE'S", day: 2, when: '9:00 AM', title: "JOSIE'S COFFEE",
-      note: "You wake up at 8 with no alarm anywhere near you. Coffee at 9, slowly. Nothing on the schedule but this.",
       stamp: 'coffee', banner: ['COFFEE FIRST'], hint: 'Up the block and in the door.',
       companion: 'follow', exitKind: 'door', signText: "JOSIE'S",
       base: 'sidewalk', objectBase: 'sidewalk',
@@ -480,7 +468,6 @@
     },
     {
       short: "GRACIE'S", day: 2, when: '9:30 AM', title: "GRACIE'S",
-      note: "Breakfast. Which, if we are being honest with ourselves, is the real reason we drove all the way up here.",
       stamp: 'pancake', banner: ['BREAKFAST TIME'], hint: 'Across the lot and in the door.',
       companion: 'follow', exitKind: 'door', signText: "GRACIE'S",
       base: 'street', objectBase: 'street',
@@ -510,7 +497,6 @@
     },
     {
       short: 'DIAMOND NOTCH', day: 2, when: '11:00 AM', title: 'DIAMOND NOTCH FALLS',
-      note: "One last walk in before we point the car south. Cross the bridge. I'll be waiting on the other side.",
       stamp: 'goldleaf', banner: ['HE IS WAITING'], hint: 'Cross the bridge and find him.',
       companion: 'wait', finale: true,
       base: 'dirt', alt: 'grass', objectBase: 'grass',
@@ -743,7 +729,7 @@
     ],
   };
 
-  // Postcard stamps: one small icon per stop, shown only on the card.
+  // Stamps: one small icon per stop, marking its line on the checklist.
   const STAMPS = {
     car: { pal: { o: '#1b4a90', b: '#2f6fd0', c: '#bfe4ff', w: '#15151a' }, rows: [
       '................', '................', '................',
@@ -1448,32 +1434,104 @@
       }
       return;
     }
-    h.textContent = state.L.hint;
+    // on the checklist the line under the pad belongs to the stop she is about
+    // to walk, not the one she just finished
+    h.textContent = state.screen === 'card' ? LEVELS[state.li].hint : state.L.hint;
   }
 
-  function showCard(i) {
+  // ---- the checklist ------------------------------------------------------
+  // One line per stop, built from the levels so it can never drift from them.
+  // It is the whole between-stops screen: the stop she just walked gets crossed
+  // off while she watches, and the next line lights up.
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TRIP_ROWS = [];
+  LEVELS.forEach((L, i) => {
+    if (L.short === "JOSIE'S") TRIP_ROWS.push({ at: i, day: 2, when: '8:00 AM', title: 'Wake up, no alarm' });
+    TRIP_ROWS.push({ at: i, day: L.day, when: L.when, title: L.title, stamp: L.stamp });
+  });
+
+  function buildChecklist(host) {
+    const rows = [];
+    let day = 0, ol = null;
+    for (const r of TRIP_ROWS) {
+      if (r.day !== day) {
+        day = r.day;
+        const h = document.createElement('p');
+        h.className = 'day';
+        h.textContent = day === 1 ? 'DAY ONE' : 'DAY TWO';
+        ol = document.createElement('ol');
+        host.append(h, ol);
+      }
+      const li = document.createElement('li');
+      const mark = document.createElement('span'); mark.className = 'mark';
+      const box = document.createElement('i'); box.className = 'box';
+      const tick = document.createElement('i'); tick.className = 'tick';
+      box.appendChild(tick);
+      mark.appendChild(box);
+      if (r.stamp) {
+        const c = document.createElement('canvas');
+        c.className = 'stamp'; c.width = 16; c.height = 16;
+        const g = c.getContext('2d');
+        g.imageSmoothingEnabled = false;
+        g.drawImage(spr.stamp[r.stamp], 0, 0);
+        mark.appendChild(c);
+      }
+      const when = document.createElement('b'); when.className = 'when'; when.textContent = r.when;
+      const what = document.createElement('span'); what.className = 'what'; what.textContent = r.title;
+      li.append(mark, when, what);
+      ol.appendChild(li);
+      rows.push({ line: li, r });
+    }
+    return rows;
+  }
+
+  // done: how many stops are behind us. now: the stop she is about to walk,
+  // or -1 at the end of the trip, when every line is crossed off.
+  function markChecklist(rows, done, now) {
+    for (const { line, r } of rows) {
+      line.classList.toggle('done', r.stamp ? r.at < done : r.at <= done);
+      line.classList.toggle('now', !!r.stamp && r.at === now);
+    }
+  }
+  // only when the line is out of sight: a sheet that fits stays put, day
+  // headings and all
+  function scrollToNow(host, rows, smooth) {
+    const row = rows.find(({ line }) => line.classList.contains('now'));
+    if (!row) return;
+    const top = row.line.offsetTop, bottom = top + row.line.offsetHeight;
+    if (top >= host.scrollTop + 8 && bottom <= host.scrollTop + host.clientHeight - 8) return;
+    host.scrollTo({
+      top: Math.max(0, top - (host.clientHeight - row.line.offsetHeight) / 2),
+      behavior: smooth && !REDUCED ? 'smooth' : 'auto',
+    });
+  }
+
+  const cardRows = buildChecklist(el('cardlist'));
+  const tripRows = buildChecklist(el('tripbody'));
+  markChecklist(tripRows, LEVELS.length, -1);
+
+  // crossing: she just finished the stop before this one, so the sheet opens as
+  // it stood and that line is struck through in front of her.
+  let crossTimer = 0;
+  function showCard(i, crossing) {
     const L = LEVELS[i];
     state.li = i; state.screen = 'card';
     document.documentElement.style.setProperty('--accent', L.theme.accent);
-    el('cardday').textContent = L.day === 1 ? 'DAY ONE' : 'DAY TWO';
     el('cardnum').textContent = 'STOP ' + (i + 1) + ' / ' + LEVELS.length;
-    el('cardwhen').textContent = L.when;
-    el('cardtitle').textContent = L.title;
-    el('cardnote').textContent = L.note;
-    const dots = el('carddots');
-    dots.innerHTML = '';
-    for (let k = 0; k < LEVELS.length; k++) {
-      const s = document.createElement('span');
-      if (k < i) s.className = 'done'; else if (k === i) s.className = 'now';
-      dots.appendChild(s);
-    }
-    const g = el('cardstamp').getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.clearRect(0, 0, 16, 16);
-    g.drawImage(spr.stamp[L.stamp], 0, 0);
+    clearTimeout(crossTimer);
+    const at = crossing ? i - 1 : i;
+    markChecklist(cardRows, at, at);
     hideAll();
+    setHint();
     el('card').hidden = false;
+    scrollToNow(el('cardlist'), cardRows, false);
     el('cardgo').focus({ preventScroll: true });
+    if (crossing) {
+      crossTimer = setTimeout(() => {
+        markChecklist(cardRows, i, i);
+        scrollToNow(el('cardlist'), cardRows, true);
+      }, 450);
+    }
   }
 
   function beginLevel(i) {
@@ -1498,7 +1556,7 @@
     state.screen = 'done';
     saveProgress(state.li + 1);
     sfx.stop();
-    setTimeout(() => showCard(state.li + 1), 800);
+    setTimeout(() => showCard(state.li + 1, true), 800);
   }
 
   // ---- the finale: she crosses to him, they hug, then the trip ------------
@@ -1827,33 +1885,6 @@
   el('tripback').addEventListener('click', () => { el('trip').hidden = true; el('win').hidden = false; });
   for (const b of document.querySelectorAll('.again')) {
     b.addEventListener('click', () => { clearProgress(); showCard(0); });
-  }
-
-  // the full itinerary, built from the levels so it can never drift from them
-  {
-    const body = el('tripbody');
-    const rows = [];
-    LEVELS.forEach((L) => {
-      if (L.short === "JOSIE'S") rows.push({ day: 2, when: '8:00 AM', title: 'Wake up, no alarm' });
-      rows.push({ day: L.day, when: L.when, title: L.title });
-    });
-    let day = 0, ol = null;
-    rows.forEach((r) => {
-      if (r.day !== day) {
-        day = r.day;
-        const h = document.createElement('p');
-        h.className = 'day';
-        h.textContent = day === 1 ? 'DAY ONE' : 'DAY TWO';
-        body.appendChild(h);
-        ol = document.createElement('ol');
-        body.appendChild(ol);
-      }
-      const li = document.createElement('li');
-      const b = document.createElement('b'); b.textContent = r.when;
-      const s = document.createElement('span'); s.textContent = r.title;
-      li.append(b, s);
-      ol.appendChild(li);
-    });
   }
 
   // ---- sizing -------------------------------------------------------------

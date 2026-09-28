@@ -1,9 +1,9 @@
 # Fall Trip
 
 An 8-bit sequel to [Shelly's Quest](https://github.com/klutetr/shellys-quest). Nine
-little scenes, one per stop on the Catskills itinerary. Between each one a postcard
-turns over and reveals the next stop, so the trip unfolds a stop at a time. The last
-one ends at Diamond Notch Falls.
+little scenes, one per stop on the Catskills itinerary. Between each one the trip
+checklist comes up: the stop she just walked is ticked off and struck through, and
+the next line lights up. The last one ends at Diamond Notch Falls.
 
 **Play: https://klutetr.github.io/fall-trip/**
 
