@@ -1416,7 +1416,7 @@
       const p = loadProgress();
       h.innerHTML = p > 0 && p < LEVELS.length
         ? 'Picking up at stop ' + (p + 1) + ' of ' + LEVELS.length + '.'
-        : 'Nine stops. Two days. Arrow keys, swipe, or the pad.';
+        : 'Arrow keys, swipe, or the pad.';
       if (p > 0) {
         const b = document.createElement('button');
         b.type = 'button'; b.textContent = 'start over';
@@ -1772,8 +1772,7 @@
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = '#9aa0b8'; ctx.fillText('THE CATSKILLS', cx, 62);
     ctx.fillStyle = '#f4efe2';
-    ctx.fillText('NINE STOPS', cx, 84);
-    ctx.fillText('TWO DAYS', cx, 98);
+    ctx.fillText('ITINERARY', cx, 88);
     const bob = Math.round(Math.sin(state.t * 3) * 2);
     ctx.drawImage(spr.car, cx - 8, 120 + bob);
     ctx.drawImage(spr.shelly[Math.floor(state.t * 3) % 2], 48, 164);
