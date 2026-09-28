@@ -1451,7 +1451,7 @@
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TRIP_ROWS = [];
   LEVELS.forEach((L, i) => {
-    if (L.short === "JOSIE'S") TRIP_ROWS.push({ at: i, day: 2, when: '8:00 AM', title: 'Wake up, no alarm' });
+    if (L.short === "JOSIE'S") TRIP_ROWS.push({ at: i, day: 2, when: '8:00 AM', title: 'Wake up' });
     TRIP_ROWS.push({ at: i, day: L.day, when: L.when, title: L.title, stamp: L.stamp });
   });
 
