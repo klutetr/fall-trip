@@ -6,7 +6,6 @@
     --ink: #0d0f1e;
     --cream: #e9dfc6;
     --cream-shade: #a8987a;
-    --blue: #2f8ff0;
     --blue-light: #a6d8ff;
     --pink: #f2a0b4;
     --gold: #f0c060;
@@ -85,7 +84,6 @@
   #pad .right { grid-area: 2 / 3; }
   #pad .down  { grid-area: 3 / 2; }
   #pad .center { grid-area: 2 / 2; background: var(--cream-shade); box-shadow: none; pointer-events: none; }
-  #pad[hidden] { display: none; }
 
   #hint { color: var(--muted); font-size: 20px; margin: 0; text-align: center; min-height: 26px; }
   #hint button {
@@ -132,7 +130,6 @@
     align-items: stretch;
     text-align: left;
     padding: 0;
-    /* paper: faint ruled tooth, so it reads as card stock not a flat panel */
     background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.035) 0 1px, transparent 1px 4px);
   }
   #card .band {
@@ -221,9 +218,6 @@
   #trip .foot { flex: none; padding: 6px 14px 8px; border-top: 3px solid rgba(0,0,0,.18); text-align: center; }
   #trip .foot button { margin: 0; }
 
-  #lose h1 { font-size: 13px; margin: 0; color: #ff6f91; text-shadow: 3px 3px 0 #7a2238; }
-  #losepic { width: 64px; height: 80px; }
-
   /* floating hearts on the win screen */
   .heart {
     position: absolute; z-index: 0; width: 4px; height: 4px; background: var(--pink);
@@ -242,7 +236,7 @@
 </style>
 
 <div id="shell">
-  <canvas id="game" width="240" height="232" aria-label="Fall Trip: a maze for every stop on the itinerary"></canvas>
+  <canvas id="game" width="240" height="232" aria-label="Fall Trip: walk through each stop on the itinerary"></canvas>
 
   <div id="card" class="overlay" hidden>
     <div class="band"><span id="cardday">DAY ONE</span><span id="cardnum">STOP 1 / 9</span></div>
@@ -275,13 +269,6 @@
     <div class="scroll" id="tripbody"></div>
     <div class="foot"><button type="button" id="tripback">BACK</button></div>
   </div>
-
-  <div id="lose" class="overlay" hidden>
-    <canvas id="losepic" width="64" height="80" aria-hidden="true"></canvas>
-    <h1 class="display" id="losetitle">ETHAN CAUGHT YOU</h1>
-    <p id="losenote">He's slow. You're faster. Go again.</p>
-    <button class="again" type="button">TRY THIS STOP AGAIN</button>
-  </div>
 </div>
 
 <div id="pad" aria-label="Direction pad">
@@ -291,225 +278,234 @@
   <button class="right" data-dir="right" aria-label="Right">&#9654;</button>
   <button class="down" data-dir="down" aria-label="Down">&#9660;</button>
 </div>
-<p id="hint">Collect everything. Find the door.</p>
+<p id="hint">Walk to the other side.</p>
 
 <script>
 (() => {
   const TILE = 16, HUD = 24, COLS = 15, ROWS = 13;
 
   // ---- the trip -----------------------------------------------------------
-  // One entry per stop. Maps are generated (see genmaze.js) so every pickup and
-  // the door are guaranteed reachable. Theme keys: wa/wb/wc/wd wall tones,
-  // fa/fb floor checker, ac accent.
+  // One scene per stop. No collecting, nothing to dodge: walk from '@' to 'X'
+  // (or, on the last stop, to 'M'). Each level says what its map characters
+  // mean, what ground sits under its scenery, and what light the hour has.
   const LEVELS = [
     {
       short: 'DEPART', day: 1, when: '7:00 AM', title: 'THE DEPARTURE',
-      note: "Still dark out. Bags in the car, coffee in the cupholder, and the whole weekend sitting in front of us. Go.",
-      item: 'bag', label: 'BAGS',
-      banner: ['GRAB ALL 4 BAGS', 'THE CAR IS WARM'],
-      theme: { wa: '#d3dbf2', wb: '#9aa5cd', wc: '#7b86ad', wd: '#5d6689', fa: '#1b2040', fb: '#161a33', ac: '#7f9ce0' },
-      pattern: 'block',
+      note: "Still dark out. Top down, heat on, coffee in the cupholder. I'm driving. You pick the music.",
+      stamp: 'car', banner: ['DRIVE NORTH'], hint: 'Follow the road north.',
+      companion: 'car',
+      base: 'road', objectBase: 'grass',
+      tiles: { '.': 'road', '~': 'lane', ',': 'grasswall', 'T': 'tree' },
+      theme: { accent: '#7f9ce0', ambient: 'rgba(22,30,66,0.40)' },
       map: [
-        '###############',
-        '#P............#',
-        '#########.###.#',
-        '#....D#3..#...#',
-        '#.....#.###.#.#',
-        '#.....#.#...#.#',
-        '#...#.#.#.#.#.#',
-        '#...#.#.#.#.#.#',
-        '#.#####.#.#.#.#',
-        '#.#...#...#.#.#',
-        '#.#.#.###.#.#.#',
-        '#4..#......1#2#',
-        '###############',
+        ',,TT,XXX,,,,TT,',
+        ',,,T,...,,,,,T,',
+        ',T,,,.~.,,,,,,,',
+        ',,,,,...,,,,TT,',
+        ',,TT,.~.,,,,,,,',
+        ',,,,,....,,,,T,',
+        ',T,,,,.~.,,,,,,',
+        ',,,,,,....,,TT,',
+        ',,TT,,,.~.,,,,,',
+        ',,,,,,,...,,,T,',
+        ',T,,,,,.~.,,,,,',
+        ',,,,,,,.@.,,TT,',
+        ',,TT,,,...,,,,,',
       ],
     },
     {
       short: 'KAATERSKILL', day: 1, when: '9:45 AM', title: 'KAATERSKILL FALLS',
-      note: "Two waterfalls before lunch. Kaaterskill first, then Plattekill down the road. Wear the boots you always swear you will not need.",
-      item: 'leaf', label: 'LEAVES',
-      banner: ['4 LEAVES', 'MIND THE ROCKS'],
-      theme: { wa: '#c9d2c0', wb: '#8c9884', wc: '#6e7a67', wd: '#54604e', fa: '#20301d', fb: '#1a2418', ac: '#e0663a' },
-      pattern: 'rock',
+      note: "Two waterfalls before lunch. Kaaterskill first, then Plattekill down the road. Follow the trail down to the water.",
+      stamp: 'leaf', banner: ['DOWN TO THE FALLS'], hint: 'Follow the trail to the overlook.',
+      companion: 'follow',
+      base: 'dirt', alt: 'grass', objectBase: 'grass',
+      tiles: { '.': 'dirt', ',': 'grass', '#': 'cliff', 'T': 'tree', 'R': 'rock', 'W': 'water', 'F': 'falls' },
+      theme: { accent: '#e0663a', ambient: 'rgba(30,50,60,0.12)' },
       map: [
         '###############',
-        '#P....#2..#3..#',
-        '###...#.#.#...#',
-        '#.#...#.#.#...#',
-        '#.#.#.#.#.#...#',
-        '#...#...#.....#',
-        '#...###.#####.#',
-        '#.....#.....#.#',
-        '#.....#.#.#.#.#',
-        '#4......#.#.#.#',
-        '#.#####.#.#.#.#',
-        '#..........1#D#',
+        '#FFF,,,,,,,,,X#',
+        '#FFF,,TT,,,,,.#',
+        '#FFF,,,,,,TT,.#',
+        '#FFF,,,R,,,,,.#',
+        '#WWW,.........#',
+        '#WWW,.,,,,,,,,#',
+        '#,,,,.,,TT,,,,#',
+        '#,TT,.,,,,,,T,#',
+        '#,,,,.,,R,TT,,#',
+        '#,,,,.,,,,,,,,#',
+        '#,,,,@,,,,,T,,#',
         '###############',
       ],
     },
     {
       short: 'LAST CHANCE', day: 1, when: '11:30 AM', title: 'LAST CHANCE CHEESE',
       note: "Lunch in Tannersville. A long table, more cheese than two people need, and nowhere else to be for an hour.",
-      item: 'cheese', label: 'CHEESES',
-      banner: ['4 CHEESES', 'TAKE YOUR TIME'],
-      theme: { wa: '#f3e7c6', wb: '#c8b088', wc: '#a48c66', wd: '#7d6848', fa: '#33241a', fb: '#2a1d14', ac: '#f0b040' },
-      pattern: 'brick',
+      stamp: 'cheese', banner: ['THROUGH THE CAFE'], hint: 'Head for the far door.',
+      companion: 'follow',
+      base: 'wood', objectBase: 'wood',
+      tiles: { '.': 'wood', '#': 'wall', 'C': 'counter', 'K': 'case', 'B': 'table' },
+      theme: { accent: '#f0b040', ambient: 'rgba(60,40,10,0.14)' },
       map: [
         '###############',
-        '#P....#4......#',
-        '#.#.#.#.###.#.#',
-        '#.#.#...#...#.#',
-        '#.###.###...#.#',
-        '#.#.....#2..#.#',
-        '#.#.###.###.#.#',
-        '#........3#.#.#',
-        '#####.###.#.#.#',
-        '#1#.....#.#.#.#',
-        '#.#.###.#.#.#.#',
-        '#...........#D#',
+        '#CCCCKCC.....X#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#.......@.....#',
         '###############',
       ],
     },
     {
       short: 'HUNTER MTN', day: 1, when: '1:00 PM', title: 'HUNTER MOUNTAIN',
       note: "Ride the lift up. Walk out to the fire tower and climb it anyway. The whole valley is turning gold from up there.",
-      item: 'lift', label: 'LIFT PASSES',
-      banner: ['4 LIFT PASSES', 'ETHAN TOOK THE', 'SAME TRAIL'],
-      chaser: true, chaserSpeed: 2.2,
-      theme: { wa: '#dde3ea', wb: '#9aa4b1', wc: '#7b8694', wd: '#5c6673', fa: '#222833', fb: '#1b2028', ac: '#e07a2a' },
-      pattern: 'rock',
+      stamp: 'lift', banner: ['UP TO THE TOWER'], hint: 'Climb to the fire tower.',
+      companion: 'follow',
+      base: 'dirt', alt: 'grass', objectBase: 'grass',
+      tiles: { '.': 'dirt', ',': 'grass', '#': 'cliff', 'P': 'pine', 'L': 'lifttower', 'O': 'firetower', 'R': 'rock' },
+      theme: { accent: '#e07a2a', ambient: 'rgba(150,180,210,0.07)' },
+      // switchbacks: the treeline forces a zigzag climb instead of a straight
+      // line up, so the walk up actually feels like a walk up
       map: [
         '###############',
-        '#P........#..1#',
-        '#.#######.#...#',
-        '#.....#3..#...#',
-        '#...#.#.#.#.#.#',
-        '#...#...#...#.#',
-        '#####...#.###.#',
-        '#...#.........#',
-        '#.#.#.#####.#.#',
-        '#.#2..#...#4#.#',
-        '#.#####.#.#.#.#',
-        '#......D#.....#',
+        '#,,,,,,O,,,,,,#',
+        '#,,,,,,X,,,,,,#',
+        '#PPRPPP.PPRPPP#',
+        '#,,,,,,.......#',
+        '#PPLPPPRPPPPP.#',
+        '#.............#',
+        '#.PPRPPPRPPPPP#',
+        '#.............#',
+        '#PPLRPPPRPPPP.#',
+        '#,,,,,,,,,,,,.#',
+        '#,,,,,,@......#',
         '###############',
       ],
     },
     {
       short: 'PEEKAMOOSE', day: 1, when: '5:00 PM', title: 'PEEKAMOOSE',
       note: "Dinner. The good kind, where we stay too long and order one more thing that we absolutely do not need.",
-      item: 'plate', label: 'PLATES',
-      banner: ['4 PLATES', 'STAY A WHILE'],
-      theme: { wa: '#eed3ad', wb: '#b98e62', wc: '#946b47', wd: '#6e4e33', fa: '#2e181c', fb: '#241216', ac: '#ff9a52' },
-      pattern: 'brick',
+      stamp: 'plate', banner: ['TABLE FOR TWO'], hint: 'Head for the far door.',
+      companion: 'follow',
+      base: 'wood', objectBase: 'wood',
+      tiles: { '.': 'wood', '#': 'wall', 'C': 'counter', 'S': 'stool', 'B': 'candle' },
+      theme: { accent: '#ff9a52', ambient: 'rgba(95,35,12,0.24)' },
+      glow: [{ x: 2, y: 4, r: 26 }, { x: 8, y: 6, r: 26 }, { x: 5, y: 8, r: 26 }, { x: 11, y: 10, r: 26 }],
       map: [
         '###############',
-        '#P#.......#...#',
-        '#.#.#####.#.#.#',
-        '#...#...#.#.#D#',
-        '#.###.#.#.#.###',
-        '#.....#..2#...#',
-        '#.....#######.#',
-        '#......4......#',
-        '#...#########.#',
-        '#........3....#',
-        '#.#############',
-        '#............1#',
+        '#CCCCCCC.....X#',
+        '#.SSSS........#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#..B..B..B..B.#',
+        '#.............#',
+        '#.B..B..B..B..#',
+        '#.............#',
+        '#..B..B..B..B.#',
+        '#.......@.....#',
         '###############',
       ],
     },
     {
       short: 'BREWERY', day: 1, when: '8:00 PM', title: 'UPWARD / WEST KILL',
       note: "Upward, or West Kill if we are feeling it. One drink. Cold mountain air. Phones stay in the car.",
-      item: 'beer', label: 'PINTS',
-      banner: ['4 PINTS', 'ETHAN IS AT', 'THE BAR TOO'],
-      chaser: true, chaserSpeed: 2.4,
-      theme: { wa: '#dda06e', wb: '#a06a42', wc: '#7f5232', wd: '#5e3b24', fa: '#1e1828', fb: '#171320', ac: '#f0c060' },
-      pattern: 'brick',
+      stamp: 'beer', banner: ['ONE MORE ROUND'], hint: 'Head for the far gate.',
+      companion: 'follow',
+      base: 'gravel', objectBase: 'gravel',
+      tiles: { '.': 'gravel', '#': 'wall', 'K': 'tank', 'C': 'counter', 'S': 'stool', 'P': 'picnic', 'T': 'tree' },
+      theme: { accent: '#f0c060', ambient: 'rgba(18,24,58,0.36)' },
+      glow: [{ x: 7, y: 1, r: 54 }, { x: 3, y: 5, r: 38 }, { x: 11, y: 7, r: 38 }],
       map: [
         '###############',
-        '#P......#....2#',
-        '#...###.#.....#',
-        '#.....#.......#',
-        '#.###.#.#.###.#',
-        '#......4#...#.#',
-        '#.#.#.###...#.#',
-        '#.#.#......1#.#',
-        '#.#.#.#######.#',
-        '#...#...#...#.#',
-        '#.#######.#.#.#',
-        '#..3......#D..#',
+        '#KKK.CCCCC...X#',
+        '#.....SSS.....#',
+        '#.............#',
+        '#.P...P...P...#',
+        '#.............#',
+        '#...P...P...P.#',
+        '#.............#',
+        '#.P...P...P...#',
+        '#.............#',
+        '#..TT.....TT..#',
+        '#......@......#',
         '###############',
       ],
     },
     {
       short: "JOSIE'S", day: 2, when: '9:00 AM', title: "JOSIE'S COFFEE",
       note: "You wake up at 8 with no alarm anywhere near you. Coffee at 9, slowly. Nothing on the schedule but this.",
-      item: 'coffee', label: 'COFFEES',
-      banner: ['4 COFFEES', 'NO RUSH TODAY'],
-      theme: { wa: '#f7ecd4', wb: '#cfbc95', wc: '#ab9877', wd: '#837357', fa: '#2e2738', fb: '#262030', ac: '#4fb0e8' },
-      pattern: 'brick',
+      stamp: 'coffee', banner: ['COFFEE FIRST'], hint: 'Head for the far door.',
+      companion: 'follow',
+      base: 'tilefloor', objectBase: 'tilefloor',
+      tiles: { '.': 'tilefloor', '#': 'wall', 'C': 'counter', 'E': 'espresso', 'B': 'table', 'S': 'stool' },
+      theme: { accent: '#4fb0e8', ambient: 'rgba(255,220,150,0.10)' },
       map: [
         '###############',
-        '#P#1#........2#',
-        '#.#.#.#.#.#####',
-        '#.#.#.#.#.#4..#',
-        '#.#.#.#.#.#.#.#',
-        '#.#.....#...#.#',
-        '#.#.#####.#.#.#',
-        '#.#.......#...#',
-        '#.#...###.#.#.#',
-        '#.....#...#.#.#',
-        '#.....#.###.#.#',
-        '#....3#......D#',
+        '#CCECCC......X#',
+        '#..SSS........#',
+        '#.............#',
+        '#.B..B...B..B.#',
+        '#.............#',
+        '#.B..B...B..B.#',
+        '#.............#',
+        '#.B..B...B..B.#',
+        '#.............#',
+        '#.............#',
+        '#......@......#',
         '###############',
       ],
     },
     {
       short: "GRACIE'S", day: 2, when: '9:30 AM', title: "GRACIE'S",
       note: "Breakfast. Which, if we are being honest with ourselves, is the real reason we drove all the way up here.",
-      item: 'pancake', label: 'STACKS',
-      banner: ['4 STACKS', 'EAT UP'],
-      theme: { wa: '#e9f2ef', wb: '#a6bcb8', wc: '#85a09b', wd: '#647d79', fa: '#192b2e', fb: '#132224', ac: '#ff6f91' },
-      pattern: 'block',
+      stamp: 'pancake', banner: ['BREAKFAST TIME'], hint: 'Head for the far door.',
+      companion: 'follow',
+      base: 'checker', objectBase: 'checker',
+      tiles: { '.': 'checker', '#': 'wall', 'C': 'counter', 'S': 'stool', 'N': 'booth' },
+      theme: { accent: '#ff6f91', ambient: 'rgba(255,230,180,0.07)' },
       map: [
         '###############',
-        '#P#1......#...#',
-        '#.#######.#...#',
+        '#CCCCCCCC....X#',
+        '#.SSSSSSS.....#',
         '#.............#',
-        '#####.#.###.#.#',
-        '#.....#.....#.#',
-        '#.###.#.#.###.#',
-        '#3....#4#...#2#',
-        '#.#######.#.#.#',
-        '#.#D......#.#.#',
-        '#.#####.###.#.#',
+        '#N..N..N..N..N#',
         '#.............#',
+        '#.............#',
+        '#N..N..N..N..N#',
+        '#.............#',
+        '#.............#',
+        '#N..N..N..N..N#',
+        '#......@......#',
         '###############',
       ],
     },
     {
       short: 'DIAMOND NOTCH', day: 2, when: '11:00 AM', title: 'DIAMOND NOTCH FALLS',
-      note: "One last walk in before we point the car south. Quiet water, gold everywhere. Come find me at the end of the trail.",
-      item: 'goldleaf', label: 'GOLD LEAVES',
-      banner: ['4 GOLD LEAVES', 'ETHAN WANTS ONE', 'LAST TRY'],
-      chaser: true, chaserSpeed: 2.2,
-      finale: true, roomX: 11,
-      theme: { wa: '#d4d9c6', wb: '#98a089', wc: '#79826c', wd: '#5b6452', fa: '#1c2a14', fb: '#16210f', ac: '#f0c060' },
-      pattern: 'rock',
+      note: "One last walk in before we point the car south. Cross the bridge. I'll be waiting on the other side.",
+      stamp: 'goldleaf', banner: ['HE IS WAITING'], hint: 'Cross the bridge and find him.',
+      companion: 'wait', finale: true,
+      base: 'dirt', alt: 'grass', objectBase: 'grass',
+      tiles: { '.': 'dirt', ',': 'grass', '#': 'cliff', 'T': 'goldtree', 'W': 'water', 'F': 'falls', 'G': 'bridge' },
+      theme: { accent: '#f0c060', ambient: 'rgba(220,170,60,0.12)' },
       map: [
         '###############',
-        '#1.....3..#####',
-        '#.###.#...#####',
-        '#.....#...#...#',
-        '#.###.#...#...#',
-        '#..4......D..M#',
-        '#.###.#.#.#...#',
-        '#.....#.#.#...#',
-        '#...#.#.#.#...#',
-        '#...#2..#.#...#',
-        '#.#.#...#.#####',
-        '#P#.......#####',
+        '#,,TT,,,,,,,,,#',
+        '#,,,,,,....M,,#',
+        '#,,,,,,.,TT,,,#',
+        '#,,,,,,.,,,,,,#',
+        '#FFWWWWGWWWWWW#',
+        '#,,,,,,.,,,,,,#',
+        '#,,TT,,.,,,,,,#',
+        '#,,,,,,.,,,,,,#',
+        '#,,,,,,.,,TT,,#',
+        '#,,,,,,.,,,,,,#',
+        '#,,,,,,@,,,,,,#',
         '###############',
       ],
     },
@@ -520,8 +516,6 @@
     H: '#1b1418', S: '#f0c8a6', E: '#2a1e22', M: '#d8788c', W: '#f6f2ea', w: '#d9d2c4',
     G: '#5c6b45', g: '#46533a', B: '#161616',
     T: '#23202a', Q: '#c9b48e', q: '#a8946f', N: '#e6e6e6',
-    D: '#7a4a2a', e: '#5a3419', F: '#f0c060', f: '#3a2212',
-    x: '#101010', l: '#cfe8ff', R: '#a83a3a', P: '#4a4a58',
   };
   const SHELLY = [[
     '.....HHHHHH.....',
@@ -588,7 +582,7 @@
     '....GGG..GGG....',
     '....BBB..BBB....',
   ];
-  const HIM = [
+  const HIM = [[
     '.....HHHHHHH....',
     '....HHHHHHHHH...',
     '...HHHHHHHHHHH..',
@@ -612,7 +606,31 @@
     '....SSS..SSS....',
     '....BBB..BBB....',
     '....NNN..NNN....',
-  ];
+  ], [
+    '.....HHHHHHH....',
+    '....HHHHHHHHH...',
+    '...HHHHHHHHHHH..',
+    '...HHHHHHHHHH...',
+    '....HHSSSSSSH...',
+    '....HSSSSSSSH...',
+    '....HSESSSES....',
+    '....HSSSSSSS....',
+    '.....SSSMMS.....',
+    '......SSSS......',
+    '....TTTTTTTT....',
+    '...TTTTTTTTTT...',
+    '..TTTTTTTTTTTT..',
+    '..STTTTTTTTTTS..',
+    '..SSTTTTTTTTSS..',
+    '.....QQQQQQ.....',
+    '....QQQQQQQQ....',
+    '...QQQQQQQQQQ...',
+    '...QQQq..qQQQ...',
+    '...SSS....SSS...',
+    '...SSS....SSS...',
+    '...BBB....BBB...',
+    '...NNN....NNN...',
+  ]];
   const HIM_HUG = [
     '.....HHHHHHH....',
     '....HHHHHHHHH...',
@@ -638,89 +656,55 @@
     '....BBB..BBB....',
     '....NNN..NNN....',
   ];
-  const ETHAN = [[
-    '.....HHHHHH.....',
-    '....HHHHHHHH....',
-    '...HHHHHHHHHH...',
-    '...HHHHHHHHHH...',
-    '...HHSSSSSSHH...',
-    '...HSSSSSSSSH...',
-    '...HxllxxllxH...',
-    '...HSxxSSxxSH...',
-    '....SSSSSSSS....',
-    '.....SSMMSS.....',
-    '......SSSS......',
-    '....RRRRRRRR....',
-    '...RRRRRRRRRR...',
-    '...SRRRRRRRRS...',
-    '...SSRRRRRRSS...',
-    '.....PPPPPP.....',
-    '....PPPPPPPP....',
-    '....PPPPPPPP....',
-    '....PPP..PPP....',
-    '....BBB..BBB....',
-  ], [
-    '.....HHHHHH.....',
-    '....HHHHHHHH....',
-    '...HHHHHHHHHH...',
-    '...HHHHHHHHHH...',
-    '...HHSSSSSSHH...',
-    '...HSSSSSSSSH...',
-    '...HxllxxllxH...',
-    '...HSxxSSxxSH...',
-    '....SSSSSSSS....',
-    '.....SSMMSS.....',
-    '......SSSS......',
-    '....RRRRRRRR....',
-    '...RRRRRRRRRR...',
-    '...SRRRRRRRRS...',
-    '...SSRRRRRRSS...',
-    '.....PPPPPP.....',
-    '....PPPPPPPP....',
-    '...PPPPPPPPPP...',
-    '...PPP....PPP...',
-    '...BBB....BBB...',
-  ]];
-  const DOOR_CLOSED = [
-    'ffffffffffffffff',
-    'fDDDDDDDDDDDDDDf',
-    'fDeeeeeeeeeeeeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDFFDDDDeDf',
-    'fDeDDDDFFDDDDeDf',
-    'fDeDDDDDFDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeDDDDDDDDDDeDf',
-    'fDeeeeeeeeeeeeDf',
-    'fDDDDDDDDDDDDDDf',
-    'ffffffffffffffff',
-  ];
   const HEART = ['.HH.HH.', 'HHHHHHH', 'HHHHHHH', '.HHHHH.', '..HHH..', '...H...'];
 
-  // The nine pickups, one per stop. Each carries its own palette so the letters
-  // can stay generic: o outline, a/b body, c/d accents, h highlight.
-  const ITEMS = {
-    bag: { pal: { o: '#33281a', a: '#7d8a52', b: '#5c6b45', c: '#d8c9a0' }, rows: [
-      '................',
-      '................',
-      '......oooo......',
-      '.....o....o.....',
-      '..oooooooooooo..',
-      '..oaaaaaaaaaao..',
-      '..oaaaaaaaaaao..',
-      '..occcccccccco..',
-      '..obbbbbbbbbbo..',
-      '..obbbbbbbbbbo..',
-      '..obbbbbbbbbbo..',
-      '..oooooooooooo..',
-      '................',
-      '................',
-      '................',
-      '................',
+  // The convertible, seen from above and facing north. He drives, she rides
+  // shotgun. 22px wide so the two of them read as two people: at 16 they
+  // collapsed into what looked like a pair of eyes.
+  const CAR = {
+    pal: { b: '#2f6fd0', o: '#18447f', c: '#bfe4ff', w: '#141418', k: '#20242c', i: '#c9a878',
+           D: '#151015', P: '#2b1c18', S: '#f0c8a6', T: '#23202a', W: '#f6f2ea' },
+    rows: [
+      '.......oooooooooo.......',
+      '......obbbbbbbbbbo......',
+      '.....obbbbbbbbbbbbo.....',
+      '.....obbbbbbbbbbbbo.....',
+      '.ww..obbbbbbbbbbbbo..ww.',
+      '.ww..obbbbbbbbbbbbo..ww.',
+      '.....occcccccccccco.....',
+      '.....okkkkkkkkkkkko.....',
+      '.....oiiiiiiiiiiiio.....',
+      '.....oiDDDDiiPPPPio.....',
+      '.....oiDSSDiiPSSPio.....',
+      '.....oiDSSDiiPSSPio.....',
+      '.....oiDDDDiiPPPPio.....',
+      '.....oiTTTTiiWWWWio.....',
+      '.....oiTTTTiiWWWWio.....',
+      '.....oiiiiiiiiiiiio.....',
+      '.....obbbbbbbbbbbbo.....',
+      '.....occcccccccccco.....',
+      '.ww..obbbbbbbbbbbbo..ww.',
+      '.ww..obbbbbbbbbbbbo..ww.',
+      '.....obbbbbbbbbbbbo.....',
+      '......obbbbbbbbbbo......',
+      '.......oooooooooo.......',
+    ],
+  };
+
+  // Postcard stamps: one small icon per stop, shown only on the card.
+  const STAMPS = {
+    car: { pal: { o: '#1b4a90', b: '#2f6fd0', c: '#bfe4ff', w: '#15151a' }, rows: [
+      '................', '................', '................',
+      '......ooooo.....',
+      '.....occcco.....',
+      '....oooooooooo..',
+      '...obbbbbbbbbo..',
+      '...obbbbbbbbbo..',
+      '...ooooooooooo..',
+      '....w.......w...',
+      '...www.....www..',
+      '....w.......w...',
+      '................', '................', '................', '................',
     ] },
     leaf: { pal: { a: '#d4562e', b: '#f0913a', o: '#6b4426' }, rows: [
       '................',
@@ -737,14 +721,11 @@
       '.......a........',
       '.......o........',
       '.......o........',
-      '................',
-      '................',
+      '................', '................',
     ] },
     goldleaf: { base: 'leaf', pal: { a: '#e0a326', b: '#f7dc85', o: '#7a5a26' } },
     cheese: { pal: { a: '#f0c23a', b: '#c49420', o: '#a8761a' }, rows: [
-      '................',
-      '................',
-      '................',
+      '................', '................', '................',
       '.......oooo.....',
       '.....ooaaaaoo...',
       '....oaaaaaaao...',
@@ -755,9 +736,7 @@
       '..oabbaaaaaaao..',
       '..oaaaaaaaaaao..',
       '..ooooooooooo...',
-      '................',
-      '................',
-      '................',
+      '................', '................', '................',
     ] },
     lift: { pal: { o: '#3a4250', a: '#d0553a', b: '#bfe4ff' }, rows: [
       '.......o........',
@@ -773,9 +752,7 @@
       '...oaaaaaaaao...',
       '...oaaaaaaaao...',
       '....oooooooo....',
-      '................',
-      '................',
-      '................',
+      '................', '................', '................',
     ] },
     plate: { pal: { h: '#cbd8e8', c: '#c0562e', a: '#f6f2ea', b: '#cbc3b2' }, rows: [
       '................',
@@ -790,14 +767,10 @@
       '..bbbbbbbbbbbb..',
       '...bbbbbbbbbb...',
       '....bbbbbbbb....',
-      '................',
-      '................',
-      '................',
-      '................',
+      '................', '................', '................', '................',
     ] },
     beer: { pal: { o: '#dfe7ee', h: '#fff8e8', a: '#e09a20' }, rows: [
-      '................',
-      '................',
+      '................', '................',
       '....oooooooo....',
       '....ohhhhhho....',
       '....ohhhhhho....',
@@ -810,8 +783,7 @@
       '....oaaaaaao....',
       '....oaaaaaao....',
       '....oooooooo....',
-      '................',
-      '................',
+      '................', '................',
     ] },
     coffee: { pal: { o: '#4a3a2c', c: '#8a6a4a', a: '#f6f2ea', b: '#b5794a', h: '#cbd8e8' }, rows: [
       '................',
@@ -827,9 +799,7 @@
       '....oabbbbao....',
       '.....oaaaao.....',
       '.....oooooo.....',
-      '................',
-      '................',
-      '................',
+      '................', '................', '................',
     ] },
     pancake: { pal: { c: '#f0c060', a: '#d9a463', b: '#b07c40', o: '#e8ecf0' }, rows: [
       '................',
@@ -845,9 +815,237 @@
       '...aaaaaaaaaa...',
       '...bbbbbbbbbb...',
       '....oooooooo....',
+      '................', '................', '................',
+    ] },
+  };
+
+  // Scenery. Every object tile is 16x16 and is drawn 4px high so it overlaps
+  // the tile above it, which gives the scene a bit of depth.
+  const PROPS = {
+    tree: { pal: { a: '#c85a2a', b: '#e08a3a', t: '#4a3526', o: '#33241a' }, rows: [
+      '.....aaaaaa.....',
+      '...aaaaaaaaaa...',
+      '..aaaaaaaaaaaa..',
+      '..aaaaabbbbaaa..',
+      '.aaaaaabbbbaaaa.',
+      '.aaaaaaabbbaaaa.',
+      '.aaaaaaaaaaaaaa.',
+      '.aaaaaaaaaaaaaa.',
+      '..aaaaaaaaaaaa..',
+      '..aaaabbbbaaaa..',
+      '...aaaaaaaaaa...',
+      '.....aaaaaa.....',
+      '.......tt.......',
+      '.......tt.......',
+      '.......tt.......',
+      '......ttot......',
+    ] },
+    goldtree: { base: 'tree', pal: { a: '#d9a02a', b: '#f0c65a', t: '#5a4326', o: '#3f2f1c' } },
+    pine: { pal: { a: '#2f5233', b: '#3d6b41', t: '#4a3526', o: '#33241a' }, rows: [
+      '.......aa.......',
+      '.......aa.......',
+      '......aaaa......',
+      '......abba......',
+      '.....aaaaaa.....',
+      '.....abbbba.....',
+      '....aaaaaaaa....',
+      '....abbbbbba....',
+      '...aaaaaaaaaa...',
+      '...abbbbbbbba...',
+      '..aaaaaaaaaaaa..',
+      '..abbbbbbbbbba..',
+      '.aaaaaaaaaaaaaa.',
+      '.......tt.......',
+      '.......tt.......',
+      '......ttot......',
+    ] },
+    rock: { pal: { a: '#7a7a74', o: '#55554f' }, rows: [
+      '................', '................',
+      '.....oooooo.....',
+      '...oooaaaaoo....',
+      '..oaaaaaaaaoo...',
+      '..oaaaaaaaaaoo..',
+      '.ooaaaaaaaaaao..',
+      '.oaaaaaaaaaaao..',
+      '.oaaaaaaaaaaao..',
+      '.ooaaaaaaaaaoo..',
+      '..ooaaaaaaaoo...',
+      '...ooooooooo....',
+      '................', '................', '................', '................',
+    ] },
+    table: { pal: { a: '#e0cfa8', o: '#4a3423', c: '#6b4a30' }, rows: [
       '................',
+      '.....cccccc.....',
+      '.....cccccc.....',
       '................',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oooooooooooo..',
       '................',
+      '.....cccccc.....',
+      '.....cccccc.....',
+      '................', '................', '................',
+    ] },
+    candle: { pal: { a: '#e0cfa8', o: '#4a3423', c: '#6b4a30', f: '#ffd27a' }, rows: [
+      '................',
+      '.....cccccc.....',
+      '.....cccccc.....',
+      '................',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaffaaaao..',
+      '..oaaaaffaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oooooooooooo..',
+      '................',
+      '.....cccccc.....',
+      '.....cccccc.....',
+      '................', '................', '................',
+    ] },
+    counter: { pal: { a: '#c9a06a', o: '#4a3420', b: '#3a2a1c' }, rows: [
+      'oooooooooooooooo',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oooooooooooooooo',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+      'bbbbbbbbbbbbbbbb',
+    ] },
+    stool: { pal: { a: '#c99a5a', o: '#5a4026' }, rows: [
+      '................', '................',
+      '...oooooooooo...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oooooooooo...',
+      '......oooo......',
+      '......oooo......',
+      '.....oooooo.....',
+      '................', '................', '................',
+      '................', '................', '................', '................',
+    ] },
+    booth: { pal: { a: '#ede4cc', b: '#a8384a', o: '#3a1620' }, rows: [
+      'oooooooooooooooo',
+      'obbbbbbbbbbbbbbo',
+      'obbbbbbbbbbbbbbo',
+      'oooooooooooooooo',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oaaaaaaaaaaaaaao',
+      'oooooooooooooooo',
+      'obbbbbbbbbbbbbbo',
+      'obbbbbbbbbbbbbbo',
+      'oooooooooooooooo',
+      '................', '................',
+    ] },
+    tank: { pal: { a: '#c6ccd4', h: '#eef2f6', o: '#5a6069' }, rows: [
+      '.....oooooo.....',
+      '....oaaaaaao....',
+      '...oaahhaaaao...',
+      '...oaahhaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '...oaaaaaaaao...',
+      '....oaaaaaao....',
+      '.....oooooo.....',
+      '......o..o......',
+      '................',
+    ] },
+    espresso: { pal: { a: '#8a8f96', b: '#2a2a2e', o: '#5a5f66' }, rows: [
+      '................',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oabbaaaabbao..',
+      '..oaaaaaaaaaao..',
+      '..oaaaaaaaaaao..',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oo........oo..',
+      '................', '................', '................', '................', '................', '................',
+    ] },
+    lifttower: { pal: { o: '#6a6f78', a: '#9aa0a8' }, rows: [
+      '..aaaaaaaaaaaa..',
+      '...oooooooooo...',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '.......oo.......',
+      '......oooo......',
+      '.....oooooo.....',
+      '................', '................', '................', '................',
+    ] },
+    firetower: { pal: { o: '#7a6a58', a: '#c9bca8' }, rows: [
+      '....oooooooo....',
+      '....o......o....',
+      '....oaaaaaao....',
+      '....o......o....',
+      '....oooooooo....',
+      '.....o....o.....',
+      '.....o....o.....',
+      '....o......o....',
+      '....o......o....',
+      '...o........o...',
+      '...o........o...',
+      '..o..........o..',
+      '..o..........o..',
+      '.o............o.',
+      '.o............o.',
+      'oooooooooooooooo',
+    ] },
+    picnic: { pal: { a: '#c99a5a', b: '#8a6535', o: '#4a3420' }, rows: [
+      '................',
+      '.oooooooooooooo.',
+      '.obbbbbbbbbbbbo.',
+      '.oooooooooooooo.',
+      '................',
+      '.oooooooooooooo.',
+      '.oaaaaaaaaaaaao.',
+      '.oaaaaaaaaaaaao.',
+      '.oaaaaaaaaaaaao.',
+      '.oaaaaaaaaaaaao.',
+      '.oooooooooooooo.',
+      '................',
+      '.oooooooooooooo.',
+      '.obbbbbbbbbbbbo.',
+      '.oooooooooooooo.',
+      '................',
+    ] },
+    case: { pal: { a: '#cfd6dd', b: '#e8dfc0', c: '#f0c23a', o: '#7a6a58' }, rows: [
+      '................',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..obbbbbbbbbbo..',
+      '..obbccbbccbbo..',
+      '..obbccbbccbbo..',
+      '..obbbbbbbbbbo..',
+      '..oooooooooooo..',
+      '..oaaaaaaaaaao..',
+      '..oooooooooooo..',
+      '................', '................', '................', '................', '................', '................',
     ] },
   };
 
@@ -862,28 +1060,254 @@
     }));
     return c;
   }
-  function dim(rows, pal) {
-    // the "not collected yet" ghost: same shape, drained toward the floor color
-    const out = {};
-    for (const k in pal) out[k] = '#39415a';
-    return makeSprite(rows, out);
-  }
   const spr = {
     shelly: SHELLY.map((f) => makeSprite(f)),
     shellyHug: makeSprite(SHELLY_HUG),
-    him: makeSprite(HIM),
+    him: HIM.map((f) => makeSprite(f)),
     himHug: makeSprite(HIM_HUG),
-    ethan: ETHAN.map((f) => makeSprite(f)),
-    door: makeSprite(DOOR_CLOSED),
+    car: makeSprite(CAR.rows, CAR.pal),
     heart: makeSprite(HEART, { H: '#f2a0b4' }),
     heartBig: makeSprite(HEART, { H: '#ff6f91' }),
-    item: {}, itemDim: {},
+    stamp: {}, prop: {},
   };
-  for (const key in ITEMS) {
-    const def = ITEMS[key];
-    const rows = def.rows || ITEMS[def.base].rows;
-    spr.item[key] = makeSprite(rows, def.pal);
-    spr.itemDim[key] = dim(rows, def.pal);
+  for (const k in STAMPS) {
+    const d = STAMPS[k];
+    spr.stamp[k] = makeSprite(d.rows || STAMPS[d.base].rows, d.pal);
+  }
+  for (const k in PROPS) {
+    const d = PROPS[k];
+    spr.prop[k] = makeSprite(d.rows || PROPS[d.base].rows, d.pal);
+  }
+
+  // ---- canvas + scene painting --------------------------------------------
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // deterministic per-tile noise, so speckles stay put between frames
+  function hash(x, y) {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function speckle(X, Y, x, y, n, sa, sb, salt) {
+    for (let i = 0; i < n; i++) {
+      const r = hash(x * salt + i, y * (salt + 6) + i * 5);
+      ctx.fillStyle = r > 0.5 ? sa : sb;
+      ctx.fillRect(X + Math.floor(r * 14), Y + Math.floor((r * 911 % 1) * 14), 2, 2);
+    }
+  }
+
+  const GROUND = {
+    grass(X, Y, x, y) {
+      ctx.fillStyle = '#3c5a32'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 6, '#47683b', '#34502c', 13);
+    },
+    grasswall(X, Y, x, y) {
+      ctx.fillStyle = '#35502c'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 8, '#41603a', '#2b4223', 23);
+    },
+    dirt(X, Y, x, y) {
+      ctx.fillStyle = '#6b563c'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 6, '#7a6449', '#5c4a33', 19);
+    },
+    gravel(X, Y, x, y) {
+      ctx.fillStyle = '#4a4640'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 7, '#565149', '#3e3a35', 17);
+    },
+    road(X, Y, x, y) {
+      ctx.fillStyle = '#2b2b33'; ctx.fillRect(X, Y, TILE, TILE);
+      speckle(X, Y, x, y, 4, '#32323b', '#26262d', 7);
+      const paved = (ax, ay) => { const k = kindAt(ax, ay); return k === 'road' || k === 'lane' || k === 'exit'; };
+      ctx.fillStyle = '#d8d2c4';
+      if (!paved(x - 1, y)) ctx.fillRect(X + 1, Y, 1, TILE);
+      if (!paved(x + 1, y)) ctx.fillRect(X + TILE - 2, Y, 1, TILE);
+    },
+    lane(X, Y, x, y) {
+      GROUND.road(X, Y, x, y);
+      ctx.fillStyle = '#e8c04a'; ctx.fillRect(X + 7, Y + 2, 2, 12);
+    },
+    wood(X, Y, x, y) {
+      ctx.fillStyle = '#6b4a30'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#5a3d27'; ctx.fillRect(X, Y + 7, TILE, 1); ctx.fillRect(X, Y + 15, TILE, 1);
+      ctx.fillStyle = '#7a573a'; ctx.fillRect(X + ((y % 2) ? 4 : 11), Y, 1, 8);
+    },
+    tilefloor(X, Y, x, y) {
+      for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) {
+        ctx.fillStyle = ((x * 2 + a) + (y * 2 + b)) % 2 ? '#d8d2c4' : '#c8c1b0';
+        ctx.fillRect(X + a * 8, Y + b * 8, 8, 8);
+      }
+    },
+    checker(X, Y, x, y) {
+      ctx.fillStyle = (x + y) % 2 ? '#e2dccc' : '#5d5760';
+      ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(X, Y, TILE, 1);
+    },
+    bridge(X, Y, x, y) {
+      ctx.fillStyle = '#7a5a38'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#5f462b';
+      for (let i = 0; i < TILE; i += 4) ctx.fillRect(X, Y + i, TILE, 1);
+      ctx.fillStyle = '#9a744a'; ctx.fillRect(X, Y, 2, TILE); ctx.fillRect(X + TILE - 2, Y, 2, TILE);
+    },
+    water(X, Y, x, y) {
+      ctx.fillStyle = '#2d5a7a'; ctx.fillRect(X, Y, TILE, TILE);
+      const w = Math.sin(state.t * 2 + x * 0.7 + y * 1.1);
+      ctx.fillStyle = '#3d7096'; ctx.fillRect(X, Y + 4 + Math.round(w * 1.5), TILE, 2);
+      ctx.fillStyle = '#4f88b0'; ctx.fillRect(X, Y + 11 - Math.round(w * 1.5), TILE, 1);
+    },
+    falls(X, Y, x, y) {
+      ctx.fillStyle = '#4a7ba0'; ctx.fillRect(X, Y, TILE, TILE);
+      for (let i = 0; i < 4; i++) {
+        const off = (state.t * 46 + i * 37 + x * 13) % 16;
+        ctx.fillStyle = i % 2 ? '#cfe8ff' : '#9fc8e8';
+        ctx.fillRect(X + 2 + i * 4, Y + off, 2, 6);
+        ctx.fillRect(X + 2 + i * 4, Y + off - 16, 2, 6);
+      }
+    },
+    cliff(X, Y, x, y) {
+      ctx.fillStyle = '#6a665e'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#7d786e'; ctx.fillRect(X, Y, TILE, 2);
+      speckle(X, Y, x, y, 5, '#55524b', '#5e5b53', 31);
+      ctx.fillStyle = '#46443e'; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    },
+    wall(X, Y, x, y) {
+      ctx.fillStyle = '#c9b48e'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#e0cfa8'; ctx.fillRect(X, Y, TILE, 2);
+      ctx.fillStyle = '#a8946f'; ctx.fillRect(X, Y + 7, TILE, 1);
+      ctx.fillStyle = '#8a7758'; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    },
+  };
+  // solid: the scenery props, plus the full-tile kinds you cannot walk on
+  const SOLID = new Set(['grasswall', 'water', 'falls', 'cliff', 'wall', 'him'].concat(Object.keys(PROPS)));
+
+  // ---- state --------------------------------------------------------------
+  const SPEED = 5;   // a stroll, not a sprint: there is scenery to look at
+  const SAVE = 'falltrip.progress';
+  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+  const state = {
+    screen: 'title', li: 0, L: LEVELS[0], map: LEVELS[0].map,
+    px: 0, py: 0, tx: 0, ty: 0, prog: 1, dir: 'down', frame: 0, t: 0,
+    banner: null, cut: null, advancing: false,
+    goal: { x: 0, y: 0 }, exitDir: 'up', himPos: null,
+    comp: null, trail: [], popups: [],
+  };
+  const held = new Set();
+  let queued = null, swipeDir = null;
+
+  const loadProgress = () => { try { return Math.min(LEVELS.length, Math.max(0, +localStorage.getItem(SAVE) || 0)); } catch (e) { return 0; } };
+  const saveProgress = (n) => { try { localStorage.setItem(SAVE, String(n)); } catch (e) {} };
+  const clearProgress = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
+
+  const at = (x, y) => (y < 0 || y >= ROWS || x < 0 || x >= COLS) ? '#' : state.map[y][x];
+  function kindAt(x, y) {
+    const L = state.L, ch = at(x, y);
+    if (ch === '#') return L.tiles['#'] || 'cliff';
+    if (ch === 'X') return 'exit';
+    if (ch === 'M') return 'him';
+    if (ch === '@') return L.base;
+    return L.tiles[ch] || L.base;
+  }
+  const solid = (x, y) => SOLID.has(kindAt(x, y));
+
+  function findPath(from, to) {
+    const key = (x, y) => y * COLS + x;
+    const prev = new Map([[key(from.x, from.y), null]]);
+    const q = [from];
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i];
+      if (c.x === to.x && c.y === to.y) break;
+      for (const k in DIRS) {
+        const n = { x: c.x + DIRS[k][0], y: c.y + DIRS[k][1] };
+        if (n.x < 0 || n.y < 0 || n.x >= COLS || n.y >= ROWS) continue;
+        if (solid(n.x, n.y) || prev.has(key(n.x, n.y))) continue;
+        prev.set(key(n.x, n.y), c); q.push(n);
+      }
+    }
+    if (!prev.has(key(to.x, to.y))) return [];
+    const path = [];
+    for (let c = to; c && !(c.x === from.x && c.y === from.y); c = prev.get(key(c.x, c.y))) path.unshift(c);
+    return path;
+  }
+
+  function loadLevel(i) {
+    const L = LEVELS[i];
+    state.li = i; state.L = L; state.map = L.map;
+    state.prog = 1; state.dir = L.companion === 'car' ? 'up' : 'up';
+    state.frame = 0; state.banner = null; state.cut = null;
+    state.advancing = false; state.trail = []; state.popups = [];
+    state.himPos = null; state.comp = null;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const ch = L.map[y][x];
+      if (ch === '@') { state.px = state.tx = x; state.py = state.ty = y; }
+      else if (ch === 'X') state.goal = { x, y };
+      else if (ch === 'M') { state.himPos = { x, y }; state.goal = { x, y }; }
+    }
+    // which way the exit faces, for the marker chevron
+    const g = state.goal;
+    state.exitDir = g.y <= 1 ? 'up' : g.y >= ROWS - 2 ? 'down' : g.x >= COLS - 2 ? 'right' : 'left';
+    if (L.companion === 'follow') {
+      const s = companionStart();
+      state.comp = { px: s.x, py: s.y, tx: s.x, ty: s.y, prog: 1, frame: 0 };
+    }
+    held.clear(); queued = null; swipeDir = null;
+    document.documentElement.style.setProperty('--accent', L.theme.accent);
+    document.getElementById('shell').style.borderColor = L.theme.accent;
+  }
+  // he starts a step behind her, on whatever open tile is nearest the start
+  function companionStart() {
+    for (const d of ['down', 'left', 'right', 'up']) {
+      const x = state.tx + DIRS[d][0], y = state.ty + DIRS[d][1];
+      if (!solid(x, y)) return { x, y };
+    }
+    return { x: state.tx, y: state.ty };
+  }
+
+  // ---- movement -----------------------------------------------------------
+  function wantDir() {
+    if (queued) { const d = queued; queued = null; return d; }
+    for (const d of ['up', 'down', 'left', 'right']) if (held.has(d)) return d;
+    return swipeDir;
+  }
+  function tryMove(d) {
+    const [dx, dy] = DIRS[d];
+    state.dir = d;
+    if (solid(state.tx + dx, state.ty + dy)) { if (d === swipeDir) swipeDir = null; return false; }
+    state.trail.push({ x: state.tx, y: state.ty });
+    state.px = state.tx; state.py = state.ty;
+    state.tx += dx; state.ty += dy; state.prog = 0;
+    return true;
+  }
+  function stepWalk(dt) {
+    if (state.prog < 1) { state.prog = Math.min(1, state.prog + dt * SPEED); return state.prog === 1; }
+    return false;
+  }
+  // he walks the tiles she has already left, a step or two back
+  function updateCompanion(dt) {
+    const c = state.comp;
+    if (!c) { if (state.trail.length > 3) state.trail.shift(); return; }
+    if (c.prog < 1) c.prog = Math.min(1, c.prog + dt * SPEED);
+    if (c.prog >= 1 && state.trail.length >= 2) {
+      const n = state.trail.shift();
+      c.px = c.tx; c.py = c.ty; c.tx = n.x; c.ty = n.y; c.prog = 0; c.frame ^= 1;
+    }
+  }
+  function arrive() {
+    if (state.L.finale) {
+      const h = state.himPos;
+      if (h && Math.abs(h.x - state.tx) + Math.abs(h.y - state.ty) <= 1) beginCutscene();
+      return;
+    }
+    if (kindAt(state.tx, state.ty) === 'exit') completeLevel();
+  }
+  function updatePlay(dt) {
+    if (stepWalk(dt)) arrive();
+    if (state.screen !== 'play') return;
+    if (state.prog >= 1) {
+      const d = wantDir();
+      if (d && tryMove(d)) state.frame ^= 1;
+    }
+    updateCompanion(dt);
   }
 
   // ---- audio (tiny chiptune) ---------------------------------------------
@@ -897,132 +1321,17 @@
     o.connect(g).connect(ac.destination);
     o.start(ac.currentTime + t0); o.stop(ac.currentTime + t0 + dur + 0.02);
   }
-  function unlockAudio() {
-    if (ac) return;
-    try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
-  }
+  function unlockAudio() { if (ac) return; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
   const sfx = {
-    step: () => beep(220, 0.04, 0, 'square', 0.02),
-    pickup: () => { beep(660, 0.08); beep(880, 0.08, 0.08); beep(1320, 0.16, 0.16); },
-    door: () => { beep(330, 0.1); beep(415, 0.1, 0.1); beep(494, 0.1, 0.2); beep(659, 0.35, 0.3, 'square', 0.06); beep(90, 0.5, 0.3, 'triangle', 0.1); },
+    start: () => { beep(440, 0.08); beep(660, 0.12, 0.09); },
     stop: () => [523, 659, 784].forEach((f, i) => beep(f, 0.16, i * 0.11)),
     hug: () => { beep(523, 0.6, 0, 'triangle', 0.06); beep(659, 0.6, 0.02, 'triangle', 0.06); beep(784, 0.6, 0.04, 'triangle', 0.06); },
     win: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => beep(f, i === 6 ? 0.5 : 0.14, i * 0.13)),
-    start: () => { beep(440, 0.08); beep(660, 0.12, 0.09); },
-    caught: () => { [440, 415, 392, 370].forEach((f, i) => beep(f, 0.18, i * 0.16, 'square', 0.07)); beep(110, 0.7, 0.62, 'triangle', 0.1); },
   };
-
-  // ---- state --------------------------------------------------------------
-  const cv = document.getElementById('game');
-  const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-
-  const SPEED = 7;          // her tiles per second
-  const SAVE = 'falltrip.progress';
-  const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-
-  const state = {
-    screen: 'title', li: 0, L: LEVELS[0], map: LEVELS[0].map,
-    items: [], got: 0, doorOpen: false, doorAnim: 0,
-    px: 0, py: 0, tx: 0, ty: 0, prog: 1, dir: 'down', frame: 0, t: 0,
-    popups: [], banner: null, cut: null, advancing: false,
-    doorPos: null, himPos: null, roomX: Infinity,
-    hasEthan: false,
-    ethan: { px: 0, py: 0, tx: 0, ty: 0, prog: 1, frame: 0, wait: 0, speed: 2.4 },
-  };
-  const held = new Set();
-  let queued = null, swipeDir = null;
-
-  const loadProgress = () => { try { return Math.min(LEVELS.length, Math.max(0, +localStorage.getItem(SAVE) || 0)); } catch (e) { return 0; } };
-  const saveProgress = (n) => { try { localStorage.setItem(SAVE, String(n)); } catch (e) {} };
-  const clearProgress = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
-
-  const at = (x, y) => (y < 0 || y >= ROWS || x < 0 || x >= COLS) ? '#' : state.map[y][x];
-  const isDoor = (x, y) => at(x, y) === 'D';
-  const wall = (x, y) => { const c = at(x, y); return c === '#' || (c === 'D' && !state.doorOpen); };
-  const inRoom = (x, y) => x >= state.roomX && at(x, y) !== '#';
-  const wallForEthan = (x, y) => wall(x, y) || isDoor(x, y) || inRoom(x, y);
-
-  function bfsFrom(sx, sy, blocked = wall) {
-    const d = Array.from({ length: ROWS }, () => Array(COLS).fill(-1));
-    d[sy][sx] = 0;
-    const q = [[sx, sy]];
-    for (let i = 0; i < q.length; i++) {
-      const [x, y] = q[i];
-      for (const k in DIRS) {
-        const nx = x + DIRS[k][0], ny = y + DIRS[k][1];
-        if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) continue;
-        if (blocked(nx, ny) || d[ny][nx] !== -1) continue;
-        d[ny][nx] = d[y][x] + 1; q.push([nx, ny]);
-      }
-    }
-    return d;
-  }
-  function findPath(from, to, blocked = wall) {
-    const key = (x, y) => y * COLS + x;
-    const prev = new Map([[key(from.x, from.y), null]]);
-    const q = [from];
-    for (let i = 0; i < q.length; i++) {
-      const c = q[i];
-      if (c.x === to.x && c.y === to.y) break;
-      for (const k in DIRS) {
-        const n = { x: c.x + DIRS[k][0], y: c.y + DIRS[k][1] };
-        if (n.x < 0 || n.y < 0 || n.x >= COLS || n.y >= ROWS) continue;
-        if (blocked(n.x, n.y) || prev.has(key(n.x, n.y))) continue;
-        prev.set(key(n.x, n.y), c); q.push(n);
-      }
-    }
-    if (!prev.has(key(to.x, to.y))) return [];
-    const path = [];
-    for (let c = to; c && !(c.x === from.x && c.y === from.y); c = prev.get(key(c.x, c.y))) path.unshift(c);
-    return path;
-  }
-
-  // Ethan starts as far from her as the level allows, never on the door, a
-  // pickup, or inside the room he is not allowed into.
-  function pickEthanStart() {
-    const d = bfsFrom(state.tx, state.ty);
-    let best = { x: state.tx, y: state.ty }, bd = -1;
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      if (wall(x, y) || isDoor(x, y) || inRoom(x, y)) continue;
-      if (state.items.some((b) => b.x === x && b.y === y)) continue;
-      if (d[y][x] > bd) { bd = d[y][x]; best = { x, y }; }
-    }
-    return best;
-  }
-
-  function loadLevel(i) {
-    const L = LEVELS[i];
-    state.li = i; state.L = L; state.map = L.map;
-    state.items = []; state.got = 0;
-    state.doorOpen = false; state.doorAnim = 0; state.banner = null; state.cut = null;
-    state.popups = []; state.prog = 1; state.dir = 'down'; state.frame = 0;
-    state.advancing = false;
-    state.doorPos = null; state.himPos = null;
-    state.roomX = L.finale ? L.roomX : Infinity;
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      const ch = L.map[y][x];
-      if (ch === 'P') { state.px = state.tx = x; state.py = state.ty = y; }
-      else if ('1234'.includes(ch)) state.items.push({ x, y, n: +ch, taken: false });
-      else if (ch === 'D') state.doorPos = { x, y };
-      else if (ch === 'M') state.himPos = { x, y };
-    }
-    state.items.sort((a, b) => a.n - b.n);
-    state.hasEthan = !!L.chaser;
-    const e = state.ethan;
-    if (state.hasEthan) {
-      const s = pickEthanStart();
-      e.px = e.tx = s.x; e.py = e.ty = s.y; e.prog = 1; e.frame = 0;
-      e.wait = 2.5; e.speed = L.chaserSpeed || 2.4;
-    }
-    held.clear(); queued = null; swipeDir = null;
-    document.documentElement.style.setProperty('--accent', L.theme.ac);
-    document.getElementById('shell').style.borderColor = L.theme.wb;
-  }
 
   // ---- screens ------------------------------------------------------------
   const el = (id) => document.getElementById(id);
-  const hideAll = () => ['card', 'win', 'trip', 'lose'].forEach((k) => { el(k).hidden = true; });
+  const hideAll = () => ['card', 'win', 'trip'].forEach((k) => { el(k).hidden = true; });
 
   function setHint() {
     const h = el('hint');
@@ -1039,14 +1348,13 @@
       }
       return;
     }
-    const L = state.L;
-    h.textContent = 'Grab all 4 ' + L.label.toLowerCase() + '. Find the door.' + (L.chaser ? " Don't let Ethan catch you." : '');
+    h.textContent = state.L.hint;
   }
 
   function showCard(i) {
     const L = LEVELS[i];
     state.li = i; state.screen = 'card';
-    document.documentElement.style.setProperty('--accent', L.theme.ac);
+    document.documentElement.style.setProperty('--accent', L.theme.accent);
     el('cardday').textContent = L.day === 1 ? 'DAY ONE' : 'DAY TWO';
     el('cardnum').textContent = 'STOP ' + (i + 1) + ' / ' + LEVELS.length;
     el('cardwhen').textContent = L.when;
@@ -1059,10 +1367,10 @@
       if (k < i) s.className = 'done'; else if (k === i) s.className = 'now';
       dots.appendChild(s);
     }
-    const st = el('cardstamp'), g = st.getContext('2d');
+    const g = el('cardstamp').getContext('2d');
     g.imageSmoothingEnabled = false;
     g.clearRect(0, 0, 16, 16);
-    g.drawImage(spr.item[L.item], 0, 0);
+    g.drawImage(spr.stamp[L.stamp], 0, 0);
     hideAll();
     el('card').hidden = false;
     el('cardgo').focus({ preventScroll: true });
@@ -1074,42 +1382,26 @@
     loadLevel(i);
     state.screen = 'play';
     setHint();
-    state.banner = { lines: LEVELS[i].banner, t: 0, dur: 4 };
+    state.banner = { lines: LEVELS[i].banner, t: 0, dur: 3 };
     sfx.start();
   }
-
   function startTitle() {
-    state.screen = 'title';
-    state.L = LEVELS[0];
+    state.screen = 'title'; state.L = LEVELS[0]; state.map = LEVELS[0].map;
     hideAll();
     document.documentElement.style.setProperty('--accent', '#f0c060');
     document.getElementById('shell').style.borderColor = 'var(--cream-shade)';
     setHint();
   }
-
-  function openDoor() {
-    state.doorOpen = true;
-    state.banner = { lines: state.L.finale ? ['THE TRAIL OPENS'] : ['THE DOOR OPENS'], t: 0, dur: 2.6 };
-    sfx.door();
-  }
-
   function completeLevel() {
     if (state.advancing) return;
     state.advancing = true;
     state.screen = 'done';
     saveProgress(state.li + 1);
     sfx.stop();
-    setTimeout(() => showCard(state.li + 1), 850);
+    setTimeout(() => showCard(state.li + 1), 800);
   }
 
-  function caught() {
-    state.screen = 'lose';
-    held.clear(); queued = null; swipeDir = null;
-    sfx.caught();
-    setTimeout(() => { el('lose').hidden = false; }, 700);
-  }
-
-  // ---- the finale: she walks to him, they hug, then the trip --------------
+  // ---- the finale: she crosses to him, they hug, then the trip ------------
   function beginCutscene() {
     state.screen = 'cutscene';
     held.clear(); queued = null; swipeDir = null;
@@ -1121,11 +1413,12 @@
     c.t += dt;
     if (c.phase === 'walk') {
       stepWalk(dt);
+      updateCompanion(dt);
       if (state.prog >= 1) {
         if (c.path.length) {
           const n = c.path.shift();
           const d = n.x > state.tx ? 'right' : n.x < state.tx ? 'left' : n.y > state.ty ? 'down' : 'up';
-          tryMove(d); state.frame ^= 1; sfx.step();
+          tryMove(d); state.frame ^= 1;
         } else { c.phase = 'pause'; c.t = 0; state.dir = 'right'; }
       }
     } else if (c.phase === 'pause') {
@@ -1133,7 +1426,7 @@
     } else if (c.phase === 'hug') {
       c.hugT = Math.min(1, c.t / 0.5);
       if (c.t > 0.3 && Math.floor(c.t * 6) !== Math.floor((c.t - dt) * 6) && c.t < 2.4) {
-        state.popups.push({ x: state.himPos.x - 0.5 + (Math.random() - 0.5), y: state.himPos.y - 0.3 - Math.random() * 0.4, t: 0, big: true });
+        state.popups.push({ x: state.himPos.x - 0.5 + (Math.random() - 0.5), y: state.himPos.y - 0.3 - Math.random() * 0.4, t: 0 });
       }
       if (c.t > 3.2) win();
     }
@@ -1157,215 +1450,114 @@
     }
   }
 
-  // ---- movement -----------------------------------------------------------
-  function wantDir() {
-    if (queued) { const d = queued; queued = null; return d; }
-    for (const d of ['up', 'down', 'left', 'right']) if (held.has(d)) return d;
-    return swipeDir;
-  }
-  function tryMove(d) {
-    const [dx, dy] = DIRS[d];
-    state.dir = d;
-    if (wall(state.tx + dx, state.ty + dy)) { if (d === swipeDir) swipeDir = null; return false; }
-    state.px = state.tx; state.py = state.ty;
-    state.tx += dx; state.ty += dy; state.prog = 0;
-    return true;
-  }
-  function stepWalk(dt) {
-    if (state.prog < 1) { state.prog = Math.min(1, state.prog + dt * SPEED); return state.prog === 1; }
-    return false;
-  }
-  function arrive() {
-    const b = state.items.find((b) => !b.taken && b.x === state.tx && b.y === state.ty);
-    if (b) {
-      b.taken = true; state.got++;
-      state.popups.push({ x: b.x, y: b.y, t: 0 });
-      sfx.pickup();
-      if (state.got === state.items.length) setTimeout(openDoor, 450);
-    }
-    if (!state.doorOpen) return;
-    if (state.L.finale) { if (inRoom(state.tx, state.ty)) beginCutscene(); }
-    else if (isDoor(state.tx, state.ty)) completeLevel();
-  }
-  function updateEthan(dt) {
-    const e = state.ethan;
-    if (e.wait > 0) { e.wait -= dt; return; }
-    if (e.prog < 1) e.prog = Math.min(1, e.prog + dt * e.speed);
-    if (e.prog >= 1) {
-      const path = findPath({ x: e.tx, y: e.ty }, { x: state.tx, y: state.ty }, wallForEthan);
-      if (path.length) {
-        const n = path[0];
-        e.px = e.tx; e.py = e.ty; e.tx = n.x; e.ty = n.y; e.prog = 0; e.frame ^= 1;
-      }
-    }
-    const ex = e.px + (e.tx - e.px) * e.prog, ey = e.py + (e.ty - e.py) * e.prog;
-    const sx = state.px + (state.tx - state.px) * state.prog, sy = state.py + (state.ty - state.py) * state.prog;
-    if (Math.hypot(ex - sx, ey - sy) < 0.55) caught();
-  }
-  function updatePlay(dt) {
-    if (stepWalk(dt)) arrive();
-    if (state.screen !== 'play') return;
-    if (state.prog >= 1) {
-      const d = wantDir();
-      if (d && tryMove(d)) { state.frame ^= 1; sfx.step(); }
-    }
-    if (state.hasEthan) updateEthan(dt);
-  }
   function update(dt) {
     state.t += dt;
-    if (state.doorOpen && state.doorAnim < 1) state.doorAnim = Math.min(1, state.doorAnim + dt * 1.5);
     if (state.banner && (state.banner.t += dt) > state.banner.dur) state.banner = null;
     state.popups = state.popups.filter((p) => (p.t += dt) < 0.7);
     if (state.screen === 'play') updatePlay(dt);
     else if (state.screen === 'cutscene') updateCutscene(dt);
-    else if (state.screen === 'done') stepWalk(dt);
+    else if (state.screen === 'done') { stepWalk(dt); updateCompanion(dt); }
   }
 
   // ---- render -------------------------------------------------------------
-  // Deterministic per-tile noise, so the rock walls stay put between frames.
-  function hash(x, y) {
-    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
-    h = Math.imul(h ^ (h >>> 13), 1274126177);
-    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-  }
-  function drawWallTile(X, Y, x, y) {
-    const th = state.L.theme;
-    ctx.fillStyle = th.wb; ctx.fillRect(X, Y, TILE, TILE);
-    ctx.fillStyle = th.wa; ctx.fillRect(X, Y, TILE, 2);
-    ctx.fillStyle = th.wc;
-    if (state.L.pattern === 'brick') {
-      ctx.fillRect(X, Y + 7, TILE, 1);
-      const off = (y % 2) ? 3 : 11;
-      ctx.fillRect(X + off, Y + 2, 1, 5);
-      ctx.fillRect(X + ((off + 8) % 16), Y + 8, 1, 6);
-    } else if (state.L.pattern === 'rock') {
-      for (let i = 0; i < 5; i++) {
-        const r = hash(x * 31 + i, y * 17 + i * 7);
-        const rx = 1 + Math.floor(r * 12), ry = 3 + Math.floor((r * 997 % 1) * 10);
-        ctx.fillRect(X + rx, Y + ry, 2, 2);
-      }
-    } else {
-      for (let i = 3; i < TILE; i += 4) ctx.fillRect(X + i, Y + 3, 1, TILE - 5);
-    }
-    ctx.fillStyle = th.wd; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
-    // walls facing an open tile get a cast shadow so the maze reads as 3d
-    if (at(x, y + 1) !== '#') { ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(X, Y + TILE - 3, TILE, 3); }
-  }
-  function drawFloorTile(X, Y, x, y) {
-    const th = state.L.theme;
-    const light = (x + y) % 2 === 0;
-    ctx.fillStyle = light ? th.fa : th.fb;
-    ctx.fillRect(X, Y, TILE, TILE);
-    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+  const CHEV = {
+    up: [[7, 3], [5, 5], [9, 5], [3, 7], [11, 7]],
+    down: [[7, 12], [5, 10], [9, 10], [3, 8], [11, 8]],
+    left: [[3, 7], [5, 5], [5, 9], [7, 3], [7, 11]],
+    right: [[12, 7], [10, 5], [10, 9], [8, 3], [8, 11]],
+  };
+  function drawExit(X, Y) {
+    const pulse = 0.5 + 0.5 * Math.sin(state.t * 5);
+    ctx.globalAlpha = 0.30 + 0.35 * pulse;
+    ctx.fillStyle = state.L.theme.accent;
     ctx.fillRect(X + 1, Y + 1, TILE - 2, TILE - 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    ctx.fillRect(X + 7, Y + 7, 2, 2);
-  }
-  function drawRoomTile(X, Y, x, y) {
-    const lit = state.doorAnim;
-    const light = (x + y) % 2 === 0;
-    ctx.fillStyle = light ? '#3a2a22' : '#33241d';
-    ctx.fillRect(X, Y, TILE, TILE);
-    ctx.fillStyle = '#2b1e18';
-    ctx.fillRect(X, Y + 7, TILE, 1);
-    ctx.fillRect(X + (light ? 4 : 11), Y, 1, TILE);
-    if (lit < 1) { ctx.fillStyle = 'rgba(13,15,30,' + ((1 - lit) * 0.92) + ')'; ctx.fillRect(X, Y, TILE, TILE); }
-  }
-  function drawDoor(X, Y) {
-    if (!state.doorOpen) { ctx.drawImage(spr.door, X, Y); return; }
-    const a = state.doorAnim, th = state.L.theme;
-    ctx.fillStyle = '#3a2212'; ctx.fillRect(X, Y, TILE, TILE);
-    ctx.fillStyle = '#33241d'; ctx.fillRect(X + 1, Y + 1, TILE - 2, TILE - 2);
-    ctx.fillStyle = 'rgba(255,190,100,' + (0.25 * a) + ')'; ctx.fillRect(X - 6, Y + 2, TILE + 6, TILE - 4);
-    const w = Math.max(0, Math.round(6 * (1 - a)));
-    if (w) { ctx.fillStyle = '#7a4a2a'; ctx.fillRect(X + 1, Y + 1, w, TILE - 2); }
-    // an arrow winking through the opening, so the exit is unmistakable
-    if (!state.L.finale) {
-      // pulses rather than blinks: the way out is never invisible
-      ctx.globalAlpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(state.t * 6));
-      ctx.fillStyle = th.ac;
-      ctx.fillRect(X + 7, Y + 4, 2, 6);
-      ctx.fillRect(X + 5, Y + 8, 6, 2);
-      ctx.fillRect(X + 6, Y + 10, 4, 2);
-      ctx.globalAlpha = 1;
-    }
-  }
-  function drawMaze() {
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      const X = x * TILE, Y = HUD + y * TILE, ch = state.map[y][x];
-      if (ch === '#') drawWallTile(X, Y, x, y);
-      else if (ch === 'D') drawDoor(X, Y);
-      else if (x >= state.roomX) drawRoomTile(X, Y, x, y);
-      else drawFloorTile(X, Y, x, y);
-    }
-  }
-  function drawItems() {
-    const key = state.L.item;
-    const bob = Math.round(Math.sin(state.t * 4) * 1.5);
-    for (const b of state.items) {
-      if (b.taken) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.fillRect(b.x * TILE + 3, HUD + b.y * TILE + 13, 10, 2);
-      ctx.drawImage(spr.item[key], b.x * TILE, HUD + b.y * TILE + bob);
-    }
-  }
-  function drawHUD() {
-    const L = state.L, th = L.theme;
-    ctx.fillStyle = '#0d0f1e'; ctx.fillRect(0, 0, cv.width, HUD);
-    ctx.fillStyle = th.ac; ctx.fillRect(0, HUD - 2, cv.width, 2);
-    ctx.font = '8px "Press Start 2P", monospace';
-    ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-    ctx.fillStyle = th.ac; ctx.fillText((state.li + 1) + '/' + LEVELS.length, 4, 8);
-    ctx.fillStyle = '#f4efe2'; ctx.fillText(L.short, 32, 8);
-    for (let i = 0; i < 4; i++) {
-      const s = i < state.got ? spr.item[L.item] : spr.itemDim[L.item];
-      ctx.drawImage(s, cv.width - 76 + i * 18, 4);
-    }
-  }
-  function drawHim() {
-    if (!state.himPos || state.doorAnim <= 0) return;
-    const hugging = state.cut && state.cut.phase === 'hug';
-    const lean = hugging ? Math.round(state.cut.hugT * 4) : 0;
-    const X = state.himPos.x * TILE - lean, Y = HUD + state.himPos.y * TILE;
-    ctx.globalAlpha = state.doorAnim;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(X + 4, Y + 14, 8, 2);
-    if (hugging) ctx.drawImage(spr.himHug, X, Y - 7);
-    else {
-      const hop = state.doorOpen && !state.cut ? -Math.abs(Math.round(Math.sin(state.t * 5) * 1.2)) : 0;
-      ctx.drawImage(spr.him, X, Y - 7 + hop);
-    }
     ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff8e8';
+    for (const [dx, dy] of CHEV[state.exitDir]) ctx.fillRect(X + dx, Y + dy, 2, 2);
   }
-  function drawEthan() {
-    if (!state.hasEthan) return;
-    const e = state.ethan;
-    const x = (e.px + (e.tx - e.px) * e.prog) * TILE, y = (e.py + (e.ty - e.py) * e.prog) * TILE + HUD;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(Math.round(x) + 4, Math.round(y) + 14, 8, 2);
-    ctx.drawImage(spr.ethan[e.prog < 1 ? e.frame : 0], Math.round(x), Math.round(y) - 5);
-    if (e.wait > 0 && Math.floor(state.t * 3) % 2 === 0) {
-      ctx.fillStyle = '#f0c060';
-      ctx.fillRect(Math.round(x) + 7, Math.round(y) - 13, 2, 5);
-      ctx.fillRect(Math.round(x) + 7, Math.round(y) - 7, 2, 2);
+  function drawScene() {
+    const L = state.L;
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const X = x * TILE, Y = HUD + y * TILE;
+      const k = kindAt(x, y);
+      if (k === 'exit') { GROUND[L.base](X, Y, x, y); drawExit(X, Y); continue; }
+      if (k === 'him') { GROUND[L.objectBase](X, Y, x, y); continue; }
+      if (GROUND[k]) { GROUND[k](X, Y, x, y); continue; }
+      GROUND[L.objectBase](X, Y, x, y);
+      ctx.drawImage(spr.prop[k], X, Y - 4);
     }
   }
-  function drawShelly() {
-    let x = (state.px + (state.tx - state.px) * state.prog) * TILE;
-    const y = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD;
-    const hugging = state.cut && state.cut.phase === 'hug';
-    if (hugging) x += Math.round(state.cut.hugT * 5);
-    const f = state.prog < 1 ? state.frame : 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  function shadow(x, y) {
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
     ctx.fillRect(Math.round(x) + 4, Math.round(y) + 14, 8, 2);
-    ctx.drawImage(hugging ? spr.shellyHug : spr.shelly[f], Math.round(x), Math.round(y) - 5);
   }
-  function drawPopups() {
+  // actors are painted back to front so whoever stands lower overlaps
+  function drawActors() {
+    const L = state.L, hugging = state.cut && state.cut.phase === 'hug';
+    const acts = [];
+    const sx = (state.px + (state.tx - state.px) * state.prog) * TILE;
+    const sy = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD;
+
+    if (L.companion === 'car') {
+      acts.push({ y: sy, draw: () => { shadow(sx, sy + 2); ctx.drawImage(spr.car, Math.round(sx) - 4, Math.round(sy) - 5); } });
+    } else {
+      acts.push({ y: sy, draw: () => {
+        let x = sx;
+        if (hugging) x += Math.round(state.cut.hugT * 5);
+        shadow(x, sy);
+        ctx.drawImage(hugging ? spr.shellyHug : spr.shelly[state.prog < 1 ? state.frame : 0], Math.round(x), Math.round(sy) - 5);
+      } });
+    }
+    if (state.comp) {
+      const c = state.comp;
+      const cx = (c.px + (c.tx - c.px) * c.prog) * TILE;
+      const cy = (c.py + (c.ty - c.py) * c.prog) * TILE + HUD;
+      acts.push({ y: cy, draw: () => { shadow(cx, cy); ctx.drawImage(spr.him[c.prog < 1 ? c.frame : 0], Math.round(cx), Math.round(cy) - 7); } });
+    }
+    if (state.himPos) {
+      const hx = state.himPos.x * TILE - (hugging ? Math.round(state.cut.hugT * 4) : 0);
+      const hy = HUD + state.himPos.y * TILE;
+      acts.push({ y: hy, draw: () => {
+        shadow(hx, hy);
+        if (hugging) ctx.drawImage(spr.himHug, hx, hy - 7);
+        else {
+          const hop = state.screen === 'play' ? -Math.abs(Math.round(Math.sin(state.t * 4) * 1.2)) : 0;
+          ctx.drawImage(spr.him[0], hx, hy - 7 + hop);
+        }
+      } });
+    }
+    acts.sort((a, b) => a.y - b.y).forEach((a) => a.draw());
+
     for (const p of state.popups) {
       const y = HUD + p.y * TILE - 4 - p.t * 18;
       ctx.globalAlpha = 1 - p.t / 0.7;
-      ctx.drawImage(p.big ? spr.heartBig : spr.heart, Math.round(p.x * TILE) + 4, Math.round(y));
+      ctx.drawImage(spr.heartBig, Math.round(p.x * TILE) + 4, Math.round(y));
       ctx.globalAlpha = 1;
     }
+  }
+  function warmGlow(cx, cy, r, a) {
+    const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, r);
+    g.addColorStop(0, 'rgba(255,196,120,' + a + ')');
+    g.addColorStop(1, 'rgba(255,196,120,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+  function drawHUD() {
+    const L = state.L;
+    ctx.fillStyle = '#0d0f1e'; ctx.fillRect(0, 0, cv.width, HUD);
+    ctx.fillStyle = L.theme.accent; ctx.fillRect(0, HUD - 2, cv.width, 2);
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+    ctx.fillStyle = L.theme.accent; ctx.fillText((state.li + 1) + '/' + LEVELS.length, 4, 8);
+    ctx.fillStyle = '#f4efe2'; ctx.fillText(L.short, 32, 8);
+    // a chevron on the right pointing the way on
+    const gx = state.goal.x - state.tx, gy = state.goal.y - state.ty;
+    const d = Math.abs(gx) > Math.abs(gy) ? (gx > 0 ? 'right' : 'left') : (gy > 0 ? 'down' : 'up');
+    const bx = cv.width - 20, by = 4;
+    ctx.globalAlpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(state.t * 4));
+    ctx.fillStyle = L.theme.accent;
+    for (const [dx, dy] of CHEV[d]) ctx.fillRect(bx + dx, by + dy, 2, 2);
+    ctx.globalAlpha = 1;
   }
   function drawBanner() {
     if (!state.banner) return;
@@ -1377,48 +1569,65 @@
     const h = lines.length * 12 + 10;
     const X = Math.round(cv.width / 2 - w / 2), Y = HUD + 6 * TILE - Math.round(h / 2) + 8;
     ctx.fillStyle = '#0d0f1e'; ctx.fillRect(X, Y, w, h);
-    ctx.fillStyle = state.L.theme.ac;
+    ctx.fillStyle = state.L.theme.accent;
     ctx.fillRect(X, Y, w, 2); ctx.fillRect(X, Y + h - 2, w, 2);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = state.L.theme.accent;
     lines.forEach((l, i) => ctx.fillText(l, cv.width / 2, Y + 7 + i * 12));
     ctx.textAlign = 'left';
     ctx.globalAlpha = 1;
   }
-  const TITLE_ITEMS = ['leaf', 'cheese', 'lift', 'beer', 'coffee'];
   function drawTitle() {
     const cx = cv.width / 2;
     ctx.fillStyle = '#0d0f1e'; ctx.fillRect(0, 0, cv.width, cv.height);
-    for (let x = 0; x < COLS; x++) {
-      ctx.fillStyle = (x % 2) ? '#2a2432' : '#1f1a24';
-      ctx.fillRect(x * TILE, 156, TILE, TILE);
-    }
+    for (let x = 0; x < COLS; x++) GROUND.road(x * TILE, 168, x, 9);
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.font = '14px "Press Start 2P", monospace';
     ctx.fillStyle = '#8a6a34'; ctx.fillText('FALL TRIP', cx + 2, 36);
     ctx.fillStyle = '#f0c060'; ctx.fillText('FALL TRIP', cx, 34);
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = '#9aa0b8'; ctx.fillText('THE CATSKILLS', cx, 62);
-    ctx.fillStyle = '#f4efe2'; ctx.fillText('NINE STOPS', cx, 82);
-    ctx.fillStyle = '#f4efe2'; ctx.fillText('TWO DAYS', cx, 96);
-    TITLE_ITEMS.forEach((k, i) => {
-      const bob = Math.round(Math.sin(state.t * 3 + i * 0.7) * 2);
-      ctx.drawImage(spr.item[k], 40 + i * 33, 116 + bob);
-    });
-    ctx.drawImage(spr.shelly[Math.floor(state.t * 3) % 2], cx - 8, 152);
+    ctx.fillStyle = '#f4efe2';
+    ctx.fillText('NINE STOPS', cx, 84);
+    ctx.fillText('TWO DAYS', cx, 98);
+    const bob = Math.round(Math.sin(state.t * 3) * 2);
+    ctx.drawImage(spr.car, cx - 8, 120 + bob);
+    ctx.drawImage(spr.shelly[Math.floor(state.t * 3) % 2], 48, 164);
+    ctx.drawImage(spr.him[Math.floor(state.t * 3) % 2], 168, 161);
     const p = loadProgress();
     if (Math.floor(state.t * 2) % 2 === 0) {
       ctx.fillStyle = '#f0c060';
-      ctx.fillText(p > 0 && p < LEVELS.length ? 'TAP TO CONTINUE' : 'TAP TO START', cx, 196);
+      ctx.fillText(p > 0 && p < LEVELS.length ? 'TAP TO CONTINUE' : 'TAP TO START', cx, 200);
     }
     if (p > 0 && p < LEVELS.length) {
       ctx.fillStyle = '#9aa0b8';
-      ctx.fillText('STOP ' + (p + 1) + ' OF ' + LEVELS.length, cx, 212);
+      ctx.fillText('STOP ' + (p + 1) + ' OF ' + LEVELS.length, cx, 214);
     }
     ctx.textAlign = 'left';
   }
   function render() {
     if (state.screen === 'title') { drawTitle(); return; }
-    drawMaze(); drawItems(); drawHim(); drawEthan(); drawShelly(); drawPopups(); drawHUD(); drawBanner();
+    drawScene();
+    drawActors();
+    const L = state.L;
+    if (L.theme.ambient) {
+      ctx.fillStyle = L.theme.ambient;
+      ctx.fillRect(0, HUD, cv.width, cv.height - HUD);
+    }
+    // warm light goes on top of the hour's wash: lamps, candles, headlights
+    if (L.glow || L.companion === 'car') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      if (L.glow) for (const g of L.glow) warmGlow(g.x * TILE + 8, HUD + g.y * TILE + 8, g.r, 0.26);
+      if (L.companion === 'car') {
+        const hx = (state.px + (state.tx - state.px) * state.prog) * TILE + 8;
+        const hy = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD + 8;
+        const d = DIRS[state.dir] || [0, -1];
+        warmGlow(hx + d[0] * 18, hy + d[1] * 18, 34, 0.30);
+      }
+      ctx.restore();
+    }
+    drawHUD();
+    drawBanner();
   }
 
   let last = performance.now();
@@ -1481,16 +1690,7 @@
   el('seetrip').addEventListener('click', () => { el('win').hidden = true; el('trip').hidden = false; });
   el('tripback').addEventListener('click', () => { el('trip').hidden = true; el('win').hidden = false; });
   for (const b of document.querySelectorAll('.again')) {
-    b.addEventListener('click', () => {
-      if (state.screen === 'win') { clearProgress(); showCard(0); } else beginLevel(state.li);
-    });
-  }
-
-  // the caught screen gets Ethan's face, scaled up
-  {
-    const c = el('losepic'), g = c.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.drawImage(spr.ethan[0], 0, 0, 16, 20, 0, 0, 64, 80);
+    b.addEventListener('click', () => { clearProgress(); showCard(0); });
   }
 
   // the full itinerary, built from the levels so it can never drift from them
@@ -1501,8 +1701,7 @@
       if (L.short === "JOSIE'S") rows.push({ day: 2, when: '8:00 AM', title: 'Wake up, no alarm' });
       rows.push({ day: L.day, when: L.when, title: L.title });
     });
-    let day = 0;
-    let ol = null;
+    let day = 0, ol = null;
     rows.forEach((r) => {
       if (r.day !== day) {
         day = r.day;
@@ -1514,10 +1713,8 @@
         body.appendChild(ol);
       }
       const li = document.createElement('li');
-      const b = document.createElement('b');
-      b.textContent = r.when;
-      const s = document.createElement('span');
-      s.textContent = r.title;
+      const b = document.createElement('b'); b.textContent = r.when;
+      const s = document.createElement('span'); s.textContent = r.title;
       li.append(b, s);
       ol.appendChild(li);
     });

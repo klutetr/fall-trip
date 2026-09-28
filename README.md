@@ -1,11 +1,16 @@
 # Fall Trip
 
 An 8-bit sequel to [Shelly's Quest](https://github.com/klutetr/shellys-quest). Nine
-mazes, one per stop on the Catskills itinerary. Clear a maze, unlock the next
-postcard, and the trip reveals itself a stop at a time. The last one ends at
-Diamond Notch Falls.
+little scenes, one per stop on the Catskills itinerary. Between each one a postcard
+turns over and reveals the next stop, so the trip unfolds a stop at a time. The last
+one ends at Diamond Notch Falls.
 
 **Play: https://klutetr.github.io/fall-trip/**
+
+There is nothing to collect and nothing to dodge. Each scene is a place with a path
+through it, and the only thing to do is walk to the other side. Stop one is the drive
+up, in the convertible, with him at the wheel. After that he tags along on foot, a
+step or two behind her, until he is waiting at the end of the last trail.
 
 - `docs/index.html` is the hosted game (GitHub Pages serves this folder).
 - `index.html` is the same game in the trimmed form used for the claude.ai artifact.
@@ -13,7 +18,7 @@ Diamond Notch Falls.
 
 Progress is saved to `localStorage`, so she can put it down between stops.
 
-Each stop is one entry in the `LEVELS` array at the top of the script: its map,
-palette, pickup sprite, postcard copy, and whether Ethan shows up. The maps are
-generated rather than hand-drawn, so every pickup and the door are always
-reachable, and no pickup on an Ethan level sits at the end of a dead end.
+Each stop is one entry in the `LEVELS` array at the top of the script. A scene is a
+15x13 grid of characters; the level's `tiles` says what each character means, `base`
+and `objectBase` say what ground it sits on, and `theme.ambient` is the wash that
+gives the hour its light. `@` is where she starts, `X` is the way out, `M` is him.
