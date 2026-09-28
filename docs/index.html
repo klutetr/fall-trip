@@ -307,7 +307,7 @@
       short: 'DEPART', day: 1, when: '7:00 AM', title: 'THE DEPARTURE',
       note: "Still dark out. Top down, heat on, coffee in the cupholder. I'm driving. You pick the music.",
       stamp: 'car', banner: ['DRIVE NORTH'], hint: 'Follow the road north.',
-      companion: 'car',
+      companion: 'car', vehicle: 'car', headlights: true,
       base: 'road', objectBase: 'grass',
       tiles: { '.': 'road', '~': 'lane', ',': 'grasswall', 'T': 'tree' },
       theme: { accent: '#7f9ce0', ambient: 'rgba(22,30,66,0.40)' },
@@ -381,28 +381,26 @@
     },
     {
       short: 'HUNTER MTN', day: 1, when: '1:00 PM', title: 'HUNTER MOUNTAIN',
-      note: "Ride the lift up. Walk out to the fire tower and climb it anyway. The whole valley is turning gold from up there.",
-      stamp: 'lift', banner: ['UP TO THE TOWER'], hint: 'Climb to the fire tower.',
-      companion: 'follow',
-      base: 'dirt', alt: 'grass', objectBase: 'grass',
-      tiles: { '.': 'dirt', ',': 'grass', '#': 'cliff', 'P': 'pine', 'L': 'lifttower', 'O': 'firetower', 'R': 'rock' },
+      note: "Ride the lift up over the treetops. Walk out to the fire tower at the top and climb it anyway. The whole valley is turning gold from up there.",
+      stamp: 'lift', banner: ['UP AND OVER'], hint: 'Ride the lift to the top.',
+      companion: 'car', vehicle: 'chair',
+      base: 'cable', exitBase: 'platform', objectBase: 'canopy', prepass: 'canopyBase',
+      tiles: { c: 'canopy', I: 'cable', T: 'tower', D: 'downline', E: 'downchair', S: 'station' },
       theme: { accent: '#e07a2a', ambient: 'rgba(150,180,210,0.07)' },
-      // switchbacks: the treeline forces a zigzag climb instead of a straight
-      // line up, so the walk up actually feels like a walk up
       map: [
-        '###############',
-        '#,,,,,,O,,,,,,#',
-        '#,,,,,,X,,,,,,#',
-        '#PPRPPP.PPRPPP#',
-        '#,,,,,,.......#',
-        '#PPLPPPRPPPPP.#',
-        '#.............#',
-        '#.PPRPPPRPPPPP#',
-        '#.............#',
-        '#PPLRPPPRPPPP.#',
-        '#,,,,,,,,,,,,.#',
-        '#,,,,,,@......#',
-        '###############',
+        'ccccccSSScccccc',
+        'ccccccSXScccccc',
+        'cccccccIcDccccc',
+        'cccccccIcEccccc',
+        'cccccccTcDccccc',
+        'cccccccIcDccccc',
+        'cccccccIcEccccc',
+        'cccccccIcDccccc',
+        'cccccccTcDccccc',
+        'cccccccIcEccccc',
+        'cccccccIcDccccc',
+        'ccccccc@cDccccc',
+        'cccccccccDccccc',
       ],
     },
     {
@@ -730,6 +728,35 @@
     ],
   };
 
+  // The chairlift chair, seen from above: hanger, back bar, the two of them
+  // side by side, and their boots hanging off the front.
+  const CHAIR = {
+    pal: { m: '#9aa0a8', o: '#3a4048', b: '#2f5a8a', i: '#4a7ab0',
+           D: '#151015', P: '#2b1c18', S: '#f0c8a6', T: '#23202a', W: '#f6f2ea' },
+    rows: [
+      '........mmmm........',
+      '.........mm.........',
+      '.........mm.........',
+      '.........mm.........',
+      '...oooooooooooooo...',
+      '...obbbbbbbbbbbbo...',
+      '...obbbbbbbbbbbbo...',
+      '...oiDDDDiiPPPPio...',
+      '...oiDSSDiiPSSPio...',
+      '...oiDSSDiiPSSPio...',
+      '...oiDDDDiiPPPPio...',
+      '...oiTTTTiiWWWWio...',
+      '...oiTTTTiiWWWWio...',
+      '...oooooooooooooo...',
+      '.....oo......oo.....',
+      '.....oo......oo.....',
+      '....oooo....oooo....',
+      '....................',
+      '....................',
+      '....................',
+    ],
+  };
+
   // Postcard stamps: one small icon per stop, shown only on the card.
   const STAMPS = {
     car: { pal: { o: '#1b4a90', b: '#2f6fd0', c: '#bfe4ff', w: '#15151a' }, rows: [
@@ -1004,39 +1031,6 @@
       '......o..o......',
       '................',
     ] },
-    lifttower: { pal: { o: '#6a6f78', a: '#9aa0a8' }, rows: [
-      '..aaaaaaaaaaaa..',
-      '...oooooooooo...',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '.......oo.......',
-      '......oooo......',
-      '.....oooooo.....',
-      '................', '................', '................', '................',
-    ] },
-    firetower: { pal: { o: '#7a6a58', a: '#c9bca8' }, rows: [
-      '....oooooooo....',
-      '....o......o....',
-      '....oaaaaaao....',
-      '....o......o....',
-      '....oooooooo....',
-      '.....o....o.....',
-      '.....o....o.....',
-      '....o......o....',
-      '....o......o....',
-      '...o........o...',
-      '...o........o...',
-      '..o..........o..',
-      '..o..........o..',
-      '.o............o.',
-      '.o............o.',
-      'oooooooooooooooo',
-    ] },
     picnic: { pal: { a: '#c99a5a', b: '#8a6535', o: '#4a3420' }, rows: [
       '................',
       '.oooooooooooooo.',
@@ -1074,6 +1068,7 @@
     him: HIM.map((f) => makeSprite(f)),
     himHug: makeSprite(HIM_HUG),
     car: makeSprite(CAR.rows, CAR.pal),
+    chair: makeSprite(CHAIR.rows, CHAIR.pal),
     heart: makeSprite(HEART, { H: '#f2a0b4' }),
     heartBig: makeSprite(HEART, { H: '#ff6f91' }),
     stamp: {}, prop: {},
@@ -1219,9 +1214,76 @@
       ctx.fillRect(X + TILE - 2, Y, 2, TILE);
       ctx.globalAlpha = 1;
     },
+    // Seen from the chair: the tops of the trees, and a long way down.
+    // The dark understory is laid down for the whole scene first (see prepass),
+    // so these crowns may spill across tile edges without being painted out.
+    // Confining each crown to its own tile made a polka-dot grid, not a forest.
+    canopyBase(X, Y) {
+      ctx.fillStyle = '#16210f'; ctx.fillRect(X, Y, TILE, TILE);
+    },
+    canopy(X, Y, x, y) {
+      for (let i = 0; i < 2; i++) {
+        const r = hash(x * 13 + i * 7, y * 7 + i * 11);
+        const s = hash(x * 29 + i * 3, y * 19 + i * 5);
+        const tone = r < 0.36 ? ['#b8501f', '#d97a2c']
+                   : r < 0.68 ? ['#c99320', '#e8bb45']
+                   : ['#3c6b36', '#4d8544'];
+        const rad = 4 + Math.floor(s * 4);
+        const cx = X + 2 + Math.floor(r * 13), cy = Y + 2 + Math.floor(s * 13);
+        ctx.fillStyle = tone[0];
+        ctx.fillRect(cx - rad, cy - rad + 2, rad * 2, rad * 2 - 3);
+        ctx.fillRect(cx - rad + 2, cy - rad, rad * 2 - 3, rad * 2);
+        ctx.fillStyle = tone[1];
+        ctx.fillRect(cx - rad + 1, cy - rad + 2, rad, rad);
+        ctx.fillStyle = 'rgba(0,0,0,0.20)';
+        ctx.fillRect(cx + 1, cy + 1, rad, rad);
+      }
+    },
+    cable(X, Y, x, y) { GROUND.canopy(X, Y, x, y); },
+    tower(X, Y, x, y) { GROUND.canopy(X, Y, x, y); },
+    downline(X, Y, x, y) { GROUND.canopy(X, Y, x, y); },
+    downchair(X, Y, x, y) { GROUND.canopy(X, Y, x, y); },
+    platform(X, Y, x, y) {
+      ctx.fillStyle = '#7a5a38'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#5f462b';
+      for (let i = 0; i < TILE; i += 4) ctx.fillRect(X, Y + i, TILE, 1);
+      ctx.fillStyle = '#9a744a'; ctx.fillRect(X, Y, TILE, 2);
+    },
+    station(X, Y, x, y) {
+      ctx.fillStyle = '#4a4a52'; ctx.fillRect(X, Y, TILE, TILE);
+      ctx.fillStyle = '#62626c'; ctx.fillRect(X, Y, TILE, 3);
+      ctx.fillStyle = '#383840';
+      for (let i = 5; i < TILE; i += 4) ctx.fillRect(X, Y + i, TILE, 1);
+      ctx.fillStyle = '#2c2c33'; ctx.fillRect(X, Y + TILE - 2, TILE, 2);
+    },
+  };
+  // Drawn after every tile is down, so a neighbouring tree crown cannot break
+  // the haul rope in half.
+  const OVERLAY = {
+    cable(X, Y) {
+      ctx.fillStyle = 'rgba(0,0,0,0.32)'; ctx.fillRect(X + 10, Y, 2, TILE);
+      ctx.fillStyle = '#9aa0a8'; ctx.fillRect(X + 7, Y, 2, TILE);
+    },
+    tower(X, Y) {
+      OVERLAY.cable(X, Y);
+      ctx.fillStyle = '#4e535a'; ctx.fillRect(X + 6, Y, 4, TILE);
+      ctx.fillStyle = '#6a6f78'; ctx.fillRect(X + 1, Y + 6, 14, 3);
+      ctx.fillStyle = '#9aa0a8';
+      ctx.fillRect(X + 1, Y + 5, 2, 2); ctx.fillRect(X + 13, Y + 5, 2, 2);
+    },
+    downline(X, Y) {
+      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(X + 10, Y, 2, TILE);
+      ctx.fillStyle = '#868c94'; ctx.fillRect(X + 7, Y, 2, TILE);
+    },
+    downchair(X, Y) {
+      OVERLAY.downline(X, Y);
+      ctx.fillStyle = '#4e535a'; ctx.fillRect(X + 7, Y, 2, 6);
+      ctx.fillStyle = '#2f5a8a'; ctx.fillRect(X + 3, Y + 5, 10, 5);
+      ctx.fillStyle = '#1e3f63'; ctx.fillRect(X + 3, Y + 10, 10, 2);
+    },
   };
   // solid: the scenery props, plus the full-tile kinds you cannot walk on
-  const SOLID = new Set(['grasswall', 'water', 'falls', 'cliff', 'him',
+  const SOLID = new Set(['grasswall', 'water', 'falls', 'cliff', 'him', 'canopy', 'downline', 'downchair', 'station',
     'roof', 'facade', 'window', 'sign'].concat(Object.keys(PROPS)));
 
   // ---- state --------------------------------------------------------------
@@ -1529,10 +1591,15 @@
   }
   function drawScene() {
     const L = state.L;
+    // a scene can lay one ground under everything before the tiles go down, so
+    // tiles that overflow their bounds are not clipped by their neighbours
+    if (L.prepass) {
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) GROUND[L.prepass](x * TILE, HUD + y * TILE, x, y);
+    }
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       const X = x * TILE, Y = HUD + y * TILE;
       const k = kindAt(x, y);
-      if (k === 'exit') { GROUND[L.base](X, Y, x, y); drawExit(X, Y); continue; }
+      if (k === 'exit') { GROUND[L.exitBase || L.base](X, Y, x, y); drawExit(X, Y); continue; }
       if (k === 'door') { GROUND.door(X, Y, x, y); continue; }
       if (k === 'him') { GROUND[L.objectBase](X, Y, x, y); continue; }
       if (GROUND[k]) { GROUND[k](X, Y, x, y); continue; }
@@ -1541,6 +1608,10 @@
       const base = (L.propBase && L.propBase[state.map[y][x]]) || L.objectBase;
       GROUND[base](X, Y, x, y);
       ctx.drawImage(spr.prop[k], X, Y - 4);
+    }
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const o = OVERLAY[kindAt(x, y)];
+      if (o) o(x * TILE, HUD + y * TILE);
     }
     drawSign();
   }
@@ -1568,7 +1639,17 @@
     const sy = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD;
 
     if (L.companion === 'car') {
-      acts.push({ y: sy, draw: () => { shadow(sx, sy + 2); ctx.drawImage(spr.car, Math.round(sx) - 4, Math.round(sy) - 5); } });
+      const v = L.vehicle || 'car';
+      const off = v === 'chair' ? [-2, -4] : [-4, -5];
+      acts.push({ y: sy, draw: () => {
+        if (v === 'chair') {
+          // the chair's shadow falls on the canopy well below and behind it
+          ctx.fillStyle = 'rgba(0,0,0,0.30)';
+          ctx.fillRect(Math.round(sx) - 1, Math.round(sy) + 15, 14, 7);
+          ctx.fillRect(Math.round(sx) + 1, Math.round(sy) + 13, 10, 11);
+        } else shadow(sx, sy + 2);
+        ctx.drawImage(spr[v], Math.round(sx) + off[0], Math.round(sy) + off[1]);
+      } });
     } else {
       acts.push({ y: sy, draw: () => {
         let x = sx;
@@ -1683,11 +1764,11 @@
       ctx.fillRect(0, HUD, cv.width, cv.height - HUD);
     }
     // warm light goes on top of the hour's wash: lamps, candles, headlights
-    if (L.glow || L.companion === 'car') {
+    if (L.glow || L.headlights) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       if (L.glow) for (const g of L.glow) warmGlow(g.x * TILE + 8, HUD + g.y * TILE + 8, g.r, 0.26);
-      if (L.companion === 'car') {
+      if (L.headlights) {
         const hx = (state.px + (state.tx - state.px) * state.prog) * TILE + 8;
         const hy = (state.py + (state.ty - state.py) * state.prog) * TILE + HUD + 8;
         const d = DIRS[state.dir] || [0, -1];
